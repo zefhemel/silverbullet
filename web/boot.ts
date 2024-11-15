@@ -1,5 +1,6 @@
 import { safeRun } from "../lib/async.ts";
 import { Client } from "./client.ts";
+import { toRealUrl } from "../lib/url_hack.ts";
 
 const syncMode = globalThis.silverBulletConfig.syncOnly ||
   !!localStorage.getItem("syncMode");
@@ -26,7 +27,7 @@ safeRun(async () => {
 
 if (navigator.serviceWorker) {
   navigator.serviceWorker
-    .register(new URL("/service_worker.js", location.href), {
+    .register(new URL(toRealUrl("/service_worker.js"), location.href), {
       type: "module",
     })
     .then(() => {

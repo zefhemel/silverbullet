@@ -69,11 +69,14 @@
   <body>
     <header>
       <h1>
-        Login to <img src="/.client/logo.png" style="height: 1ch" />
+        Login to <img
+          src="{{URL_PREFIX}}/.client/logo.png"
+          style="height: 1ch"
+        />
         SilverBullet
       </h1>
     </header>
-    <form action="/.auth" method="POST" id="login">
+    <form action="{{URL_PREFIX}}/.auth" method="POST" id="login">
       <div class="error-message"></div>
       <div>
         <input

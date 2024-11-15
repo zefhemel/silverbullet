@@ -7,6 +7,7 @@ import type { Client } from "./client.ts";
 import { cleanPageRef } from "@silverbulletmd/silverbullet/lib/resolve";
 import { renderTheTemplate } from "$common/syscalls/template.ts";
 import { safeRun } from "../lib/async.ts";
+import { toInternalUrl, toRealUrl } from "../lib/url_hack.ts";
 
 export type PageState = PageRef & {
   scrollTop?: number;
@@ -61,18 +62,18 @@ export class PathPageNavigator {
       globalThis.history.replaceState(
         cleanState,
         "",
-        `/${encodePageURI(currentState.page)}`,
+        toRealUrl(`/${encodePageURI(currentState.page)}`),
       );
       globalThis.history.pushState(
         pageRef,
         "",
-        `/${encodePageURI(pageRef.page)}`,
+        toRealUrl(`/${encodePageURI(pageRef.page)}`),
       );
     } else {
       globalThis.history.replaceState(
         pageRef,
         "",
-        `/${encodePageURI(pageRef.page)}`,
+        toRealUrl(`/${encodePageURI(pageRef.page)}`),
       );
     }
     globalThis.dispatchEvent(
@@ -148,7 +149,7 @@ export class PathPageNavigator {
 
 export function parsePageRefFromURI(): PageRef {
   const pageRef = parsePageRef(decodeURIComponent(
-    location.pathname.substring(1),
+    toInternalUrl(location.pathname).substring(1),
   ));
 
   if (location.hash) {

@@ -20,6 +20,7 @@ import {
   parsePageRef,
 } from "@silverbulletmd/silverbullet/lib/page_ref";
 import { base64Encode } from "$lib/crypto.ts";
+import { toInternalUrl, toRealUrl, urlPrefix } from "$lib/url_hack.ts";
 
 const authenticationExpirySeconds = 60 * 60 * 24 * 7; // 1 week
 
@@ -58,7 +59,7 @@ export class HttpServer {
   baseKvPrimitives: KvPrimitives;
 
   constructor(private options: ServerOptions) {
-    this.app = new Hono();
+    this.app = new Hono().basePath(urlPrefix);
     this.clientAssetBundle = options.clientAssetBundle;
     this.plugAssetBundle = options.plugAssetBundle;
     this.hostname = options.hostname;
@@ -102,6 +103,9 @@ export class HttpServer {
       .replace(
         "{{SPACE_PATH}}",
         spaceServer.pagesPath.replaceAll("\\", "\\\\"),
+      ).replaceAll(
+        "{{URL_PREFIX}}",
+        urlPrefix,
       )
       .replace(
         "{{DESCRIPTION}}",
@@ -149,7 +153,7 @@ export class HttpServer {
 
     // Fallback, serve the UI index.html
     this.app.use("*", (c) => {
-      const url = new URL(c.req.url);
+      const url = new URL(toInternalUrl(c.req.url));
       const pageName = decodePageURI(url.pathname.slice(1));
       return this.renderHtmlPage(this.spaceServer, pageName, c);
     });
@@ -182,7 +186,7 @@ export class HttpServer {
   serveCustomEndpoints() {
     this.app.use("/_/*", async (ctx) => {
       const req = ctx.req;
-      const url = new URL(req.url);
+      const url = new URL(toInternalUrl(req.url));
       if (!this.spaceServer.serverSystem) {
         return ctx.text("No server system available", 500);
       }
@@ -240,7 +244,7 @@ export class HttpServer {
   serveStatic() {
     this.app.use("*", (c, next): Promise<void | Response> => {
       const req = c.req;
-      const url = new URL(req.url);
+      const url = new URL(toInternalUrl(req.url));
       // console.log("URL", url);
       if (
         url.pathname === "/"
@@ -317,15 +321,19 @@ export class HttpServer {
 
     // TODO: This should probably be a POST request
     this.app.get("/.logout", (c) => {
-      const url = new URL(c.req.url);
+      const url = new URL(toInternalUrl(c.req.url));
       deleteCookie(c, authCookieName(url.host));
       deleteCookie(c, "refreshLogin");
 
-      return c.redirect("/.auth");
+      return c.redirect(toRealUrl("/.auth"));
     });
 
     this.app.get("/.auth", (c) => {
-      const html = this.clientAssetBundle.readTextFileSync(".client/auth.html");
+      const html = this.clientAssetBundle.readTextFileSync(".client/auth.html")
+        .replaceAll(
+          "{{URL_PREFIX}}",
+          urlPrefix,
+        );
 
       return c.html(html);
     }).post(
@@ -339,7 +347,7 @@ export class HttpServer {
           !password || typeof password !== "string" ||
           (rememberMe && typeof rememberMe !== "string")
         ) {
-          return c.redirect("/.auth?error=0");
+          return c.redirect(toRealUrl("/.auth?error=0"));
         }
 
         return { username, password, rememberMe };
@@ -376,14 +384,16 @@ export class HttpServer {
           }
           const values = await c.req.parseBody();
           const from = values["from"];
-          return c.redirect(typeof from === "string" ? from : "/");
+          const result = toRealUrl(typeof from === "string" ? from : "/");
+          console.log(result);
+          return c.redirect(result);
         } else {
           console.error("Authentication failed, redirecting to auth page.");
-          return c.redirect("/.auth?error=1");
+          return c.redirect("/.auth?error=1", 401);
         }
       },
     ).all((c) => {
-      return c.redirect("/.auth");
+      return c.redirect(toRealUrl("/.auth"));
     });
 
     // Check auth
@@ -393,14 +403,15 @@ export class HttpServer {
         // Auth disabled in this config, skip
         return next();
       }
-      const url = new URL(req.url);
+      const url = new URL(toInternalUrl(req.url));
+      const path = toInternalUrl(req.path);
       const host = url.host;
       const redirectToAuth = () => {
         // Try filtering api paths
-        if (req.path.startsWith("/.") || req.path.endsWith(".md")) {
-          return c.redirect("/.auth", 401);
+        if (path.startsWith("/.") || path.endsWith(".md")) {
+          return c.redirect(toRealUrl("/.auth"), 401);
         } else {
-          return c.redirect(`/.auth?from=${req.path}`, 401);
+          return c.redirect(toRealUrl(`/.auth?from=${path}`), 401);
         }
       };
       if (!excludedPaths.includes(url.pathname)) {
@@ -490,7 +501,7 @@ export class HttpServer {
       } else {
         // Otherwise, redirect to the UI
         // The reason to do this is to handle authentication systems like Authelia nicely
-        return c.redirect("/");
+        return c.redirect(toRealUrl("/"));
       }
     });
 
@@ -569,7 +580,7 @@ export class HttpServer {
         console.warn(
           "Request was without X-Sync-Mode nor a CORS request, redirecting to page",
         );
-        return c.redirect(`/${name.slice(0, -mdExt.length)}`);
+        return c.redirect(toRealUrl(`/${name.slice(0, -mdExt.length)}`));
       }
       if (name.startsWith(".")) {
         // Don't expose hidden files

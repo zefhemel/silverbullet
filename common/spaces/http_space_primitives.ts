@@ -5,6 +5,7 @@ import {
   unregisterServiceWorkers,
 } from "../sw_util.ts";
 import { encodePageURI } from "@silverbulletmd/silverbullet/lib/page_ref";
+import { toRealUrl, urlPrefix } from "../../lib/url_hack.ts";
 
 const defaultFetchTimeout = 30000; // 30 seconds
 
@@ -38,7 +39,8 @@ export class HttpSpacePrimitives implements SpacePrimitives {
     try {
       options.signal = AbortSignal.timeout(fetchTimeout);
       options.redirect = "manual";
-      const result = await fetch(url, options);
+
+      const result = await fetch(toRealUrl(url), options);
       if (result.status === 503) {
         throw new Error("Offline");
       }
@@ -67,7 +69,9 @@ export class HttpSpacePrimitives implements SpacePrimitives {
             "Received an authentication redirect, redirecting to URL: " +
               redirectHeader,
           );
-          location.href = redirectHeader;
+          location.href = redirectHeader.startsWith(urlPrefix)
+            ? redirectHeader
+            : toRealUrl(redirectHeader);
           throw new Error("Redirected");
         } else {
           console.error("Got a redirect status but no location header", result);
@@ -82,7 +86,9 @@ export class HttpSpacePrimitives implements SpacePrimitives {
             result.url,
           );
           alert("You are not authenticated, redirecting to: " + redirectHeader);
-          location.href = redirectHeader;
+          location.href = redirectHeader.startsWith(urlPrefix)
+            ? redirectHeader
+            : toRealUrl(redirectHeader);
           throw new Error("Not authenticated");
         } else {
           // If not, let's reload

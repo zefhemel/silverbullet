@@ -3,6 +3,7 @@ import type { ControllerMessage, WorkerMessage } from "../protocol.ts";
 import type { Plug } from "../plug.ts";
 import { AssetBundle, type AssetJson } from "../../asset_bundle/bundle.ts";
 import type { Sandbox } from "./sandbox.ts";
+import { toRealUrl } from "../../url_hack.ts";
 
 /**
  * Represents a "safe" execution environment for plug code
@@ -36,7 +37,7 @@ export class WorkerSandbox<HookT> implements Sandbox<HookT> {
       console.warn("Double init of sandbox, ignoring");
       return Promise.resolve();
     }
-    this.worker = new Worker(this.workerUrl, {
+    this.worker = new Worker(toRealUrl(this.workerUrl), {
       ...this.workerOptions,
       type: "module",
     });

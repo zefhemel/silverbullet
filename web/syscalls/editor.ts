@@ -16,6 +16,7 @@ import type { UploadFile } from "../../plug-api/types.ts";
 import type { PageRef } from "@silverbulletmd/silverbullet/lib/page_ref";
 import { openSearchPanel } from "@codemirror/search";
 import { diffAndPrepareChanges } from "../cm_util.ts";
+import { toInternalUrl, toRealUrl } from "../../lib/url_hack.ts";
 
 export function editorSyscalls(client: Client): SysCallMapping {
   const syscalls: SysCallMapping = {
@@ -75,17 +76,17 @@ export function editorSyscalls(client: Client): SysCallMapping {
     },
     "editor.openUrl": (_ctx, url: string, existingWindow = false) => {
       if (!existingWindow) {
-        const win = globalThis.open(url, "_blank");
+        const win = globalThis.open(toRealUrl(url), "_blank");
         if (win) {
           win.focus();
         }
       } else {
-        location.href = url;
+        location.href = toRealUrl(url);
       }
     },
     "editor.newWindow": () => {
       globalThis.open(
-        location.href,
+        toInternalUrl(location.href),
         "rnd" + Math.random(),
         `width=${globalThis.innerWidth},heigh=${globalThis.innerHeight}`,
       );
