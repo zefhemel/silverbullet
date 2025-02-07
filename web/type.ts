@@ -1,7 +1,10 @@
 import type { AppCommand } from "../lib/command.ts";
 import type { FilterOption, Notification, PanelMode } from "../type/client.ts";
 import { type Config, defaultConfig } from "../type/config.ts";
-import type { PageMeta } from "@silverbulletmd/silverbullet/types";
+import type {
+  AttachmentMeta,
+  PageMeta,
+} from "@silverbulletmd/silverbullet/types";
 
 export type PanelConfig = {
   mode?: PanelMode;
@@ -13,6 +16,7 @@ export type AppViewState = {
   currentPage?: string;
   currentPageMeta?: PageMeta;
   allPages: PageMeta[];
+  allAttachments: AttachmentMeta[];
 
   isLoading: boolean;
   isMobile: boolean;
@@ -37,7 +41,7 @@ export type AppViewState = {
   };
 
   // Page navigator mode
-  pageNavigatorMode: "page" | "meta" | "all";
+  pageNavigatorMode: "page" | "meta" | "attachment" | "all";
 
   // Filter box
   showFilterBox: boolean;
@@ -80,6 +84,7 @@ export const initialViewState: AppViewState = {
   },
   config: defaultConfig,
   allPages: [],
+  allAttachments: [],
   commands: new Map(),
   recentCommands: new Map(),
   notifications: [],
@@ -102,8 +107,9 @@ export type Action =
   | { type: "sync-change"; syncSuccess: boolean }
   | { type: "update-current-page-meta"; meta: PageMeta }
   | { type: "update-page-list"; allPages: PageMeta[] }
+  | { type: "update-attachment-list"; allAttachments: AttachmentMeta[] }
   | { type: "config-loaded"; config: Config }
-  | { type: "start-navigate"; mode: "page" | "meta" | "all" }
+  | { type: "start-navigate"; mode: "page" | "meta" | "attachment" | "all" }
   | { type: "stop-navigate" }
   | {
     type: "update-commands";

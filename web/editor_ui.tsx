@@ -16,6 +16,7 @@ import { Panel } from "./components/panel.tsx";
 import { safeRun, sleep } from "../lib/async.ts";
 import { parseCommand } from "$common/command.ts";
 import { defaultActionButtons } from "@silverbulletmd/silverbullet/type/config";
+import type { FilterOption } from "@silverbulletmd/silverbullet/type/client";
 
 export class MainUI {
   viewState: AppViewState = initialViewState;
@@ -112,6 +113,7 @@ export class MainUI {
       <>
         {viewState.showPageNavigator && (
           <PageNavigator
+            allAttachments={viewState.allAttachments}
             allPages={viewState.allPages}
             currentPage={client.currentPage}
             mode={viewState.pageNavigatorMode}
@@ -124,16 +126,37 @@ export class MainUI {
                 dispatch({ type: "start-navigate", mode });
               });
             }}
-            onNavigate={(page) => {
+            onNavigate={(name, type) => {
               dispatch({ type: "stop-navigate" });
               setTimeout(() => {
                 client.focus();
               });
-              if (page) {
-                safeRun(async () => {
-                  await client.navigate({ page });
-                });
-              }
+              if (!name) return;
+
+              safeRun(async () => {
+                if (type === "attachment") {
+                  const options: string[] = ["Delete", "Rename"]
+
+                  const option = await client.filterBox("Modify", options.map(x => ({name: x} as FilterOption)), "There is no editor for this file type. Modify the selected attachment");
+                  if (!option) return;
+
+                  switch (option.name) {
+                    case "Delete": {
+                      client.space.deleteAttachment(name)
+                      return;
+                    }
+                    case "Rename": {
+                      await client.clientSystem.system.invokeFunction(
+                        "index.renameAttachmentCommand",
+                        [{ oldAttachment: name }],
+                      );
+                      return;
+                    }
+                  }
+                } else {
+                  await client.navigate({ page: name });
+                }
+              });
             }}
           />
         )}

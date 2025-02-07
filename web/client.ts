@@ -22,6 +22,7 @@ import type { AppViewState } from "./type.ts";
 
 import type {
   AppEvent,
+  AttachmentMeta,
   CompleteEvent,
   SlashCompletions,
 } from "../plug-api/types.ts";
@@ -747,11 +748,13 @@ export class Client implements ConfigContainer {
     );
   }
 
-  startPageNavigate(mode: "page" | "meta" | "all") {
+  startPageNavigate(mode: "page" | "meta" | "attachment" | "all") {
     // Then show the page navigator
     this.ui.viewDispatch({ type: "start-navigate", mode });
     // And update the page list cache asynchronously
     this.updatePageListCache().catch(console.error);
+
+    this.updateAttachmentListCache().catch(console.error);
   }
 
   async updatePageListCache() {
@@ -778,6 +781,20 @@ export class Client implements ConfigContainer {
     this.ui.viewDispatch({
       type: "update-page-list",
       allPages: allPages.concat(allAspiringPages),
+    });
+  }
+
+  async updateAttachmentListCache() {
+    console.log("Updating attachment list cache");
+
+    const allAttachments = await this.clientSystem.queryObjects<AttachmentMeta>(
+      "attachment",
+      {},
+    );
+
+    this.ui.viewDispatch({
+      type: "update-attachment-list",
+      allAttachments: allAttachments,
     });
   }
 

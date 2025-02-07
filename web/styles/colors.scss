@@ -162,9 +162,14 @@
   }
 
   .sb-result-list {
-    .sb-hint {
+    .sb-hint:not(.sb-hint-inactive) {
       color: var(--modal-hint-color);
       background-color: var(--modal-hint-background-color);
+    }
+
+    .sb-hint.sb-hint-inactive {
+      color: var(--modal-hint-inactive-color);
+      background-color: var(--modal-hint-inactive-background-color);
     }
 
     .sb-description {

@@ -4,6 +4,7 @@ export type FilterOption = {
   description?: string;
   orderId?: number;
   hint?: string;
+  hintInactive?: boolean;
   classes?: string;
 } & Record<string, any>;
 

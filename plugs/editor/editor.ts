@@ -26,6 +26,10 @@ export async function openMetaNavigator() {
   await editor.openPageNavigator("meta");
 }
 
+export async function openAttachmentNavigator() {
+  await editor.openPageNavigator("attachment");
+}
+
 export async function openAllNavigator() {
   await editor.openPageNavigator("all");
 }

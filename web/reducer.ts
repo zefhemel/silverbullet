@@ -89,6 +89,12 @@ export default function reducer(
       }
       return newState;
     }
+    case "update-attachment-list": {
+      return {
+        ...state,
+        allAttachments: action.allAttachments,
+      };
+    }
     case "start-navigate": {
       return {
         ...state,

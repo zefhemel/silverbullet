@@ -69,6 +69,26 @@ export async function renamePageLinkCommand() {
 }
 
 /**
+ * Renames a single attachment.
+ * @param cmdDef Optional command arguments
+ * @param cmdDef.oldAttachment The current name of the attachment to rename.
+ * @param cmdDef.attachment The name to rename the attachment to. If not provided the
+ *   user will be prompted to enter a new name.
+ * @returns True if the rename succeeded; otherwise, false.
+ */
+export async function renameAttachmentCommand(cmdDef: any) {
+  const oldName: string = cmdDef.oldAttachment;
+  const newName: string = cmdDef.attachment ||
+    await editor.prompt(`Rename ${oldName} to:`, oldName);
+  if (!newName) {
+    return false;
+  }
+  const pageList: [string, string][] = [[oldName, newName]];
+  await batchRenameFiles(pageList);
+  return true;
+}
+
+/**
  * Renames any amount of files.
  * If renaming pages, names should be passed with a .md extension
  * @param fileList An array of tuples containing [FileToBeRenamed, NewFileName]

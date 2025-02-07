@@ -92,7 +92,7 @@ export function navigate(
  * @param mode the mode to open the navigator in
  */
 export function openPageNavigator(
-  mode: "page" | "meta" | "all" = "page",
+  mode: "page" | "meta" | "attachment" | "all" = "page",
 ): Promise<void> {
   return syscall("editor.openPageNavigator", mode);
 }

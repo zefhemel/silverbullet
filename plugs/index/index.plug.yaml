@@ -190,6 +190,9 @@ functions:
       key: Ctrl-Shift-Alt-r
       requireMode: rw
 
+  renameAttachmentCommand:
+    path: "./refactor.ts:renameAttachmentCommand"
+
   # Refactoring Commands
   extractToPageCommand:
     path: ./refactor.ts:extractToPageCommand

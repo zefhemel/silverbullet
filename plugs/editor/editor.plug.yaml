@@ -107,6 +107,13 @@ functions:
       key: "Ctrl-Shift-k"
       mac: "Cmd-Shift-k"
 
+  openAttachmentNavigator:
+    path: editor.ts:openAttachmentNavigator
+    command:
+      name: "Navigate: All Attachments Picker"
+      key: "Ctrl-o"
+      mac: "Cmd-o"
+
   openAllNavigator:
     path: editor.ts:openAllNavigator
     command:

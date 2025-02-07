@@ -39,6 +39,8 @@ html {
   --modal-selected-option-color: var(--ui-accent-contrast-color);
   --modal-hint-background-color: #212476;
   --modal-hint-color: #eee;
+  --modal-hint-inactive-background-color: #e1e1e1;
+  --modal-hint-inactive-color: #111;
   --modal-description-color: #aaa;
 
   --notifications-background-color: inherit;
@@ -179,6 +181,8 @@ html[data-theme="dark"] {
   --modal-selected-option-color: #eee;
   --modal-hint-background-color: #212476;
   --modal-hint-color: #eee;
+  --modal-hint-inactive-background-color: #353535;
+  --modal-hint-inactive-color: #ccc;
   --modal-description-color: #aaa;
 
   --notifications-background-color: #333;

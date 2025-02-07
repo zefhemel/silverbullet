@@ -231,7 +231,7 @@ export function FilterList({
               <span className="sb-name">
                 {option.name}
               </span>
-              {option.hint && <span className="sb-hint">{option.hint}</span>}
+              {option.hint && <span className={ "sb-hint" + (option.hintInactive ? " sb-hint-inactive": "")}>{option.hint}</span>}
               <div className="sb-description">{option.description}</div>
             </div>
           ))
