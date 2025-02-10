@@ -176,6 +176,14 @@ export type CodeWidgetButton = {
   invokeFunction: string[];
 };
 
+// Dedicated editors stuff
+export type DedicatedEditorCallback = () => Promise<DedicatedEditorContent>;
+
+export type DedicatedEditorContent = {
+  html: string;
+  script?: string;
+};
+
 export type LintDiagnostic = {
   from: number;
   to: number;
