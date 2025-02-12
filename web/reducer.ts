@@ -1,3 +1,4 @@
+import path from "node:path";
 import type { PageMeta } from "../plug-api/types.ts";
 import type { Action, AppViewState } from "./type.ts";
 
@@ -7,16 +8,54 @@ export default function reducer(
 ): AppViewState {
   // console.log("Got action", action);
   switch (action.type) {
+    case "dedicated-editor-loading":
+      return {
+        ...state,
+        isLoading: false,
+        current: {
+          kind: "attachment",
+          path: action.name,
+          // Do a best effor job of filling in the meta data, as the page is not loaded yet
+          meta: {
+            ref: action.name,
+            tag: "attachment",
+            name: action.name,
+            contentType: "",
+            created: "",
+            lastModified: "",
+            size: 0,
+            perm: "rw",
+            extension: "",
+          },
+        },
+      };
+    case "dedicated-editor-loaded":
+      return {
+        ...state,
+        isLoading: false,
+        current: {
+          kind: "attachment",
+          path: action.meta.name,
+          meta: action.meta,
+        },
+      };
     case "page-loading":
       return {
         ...state,
         isLoading: true,
-        // TODO: is it really necessary to set this here already?
-        // current: {
-        //   kind: "page",
-        //   path: action.name,
-        //   meta: {},
-        // },
+        current: {
+          kind: "page",
+          path: action.name,
+          // Do a best effort job of filling in the meta data
+          meta: {
+            ref: action.name,
+            tag: "page",
+            name: action.name,
+            lastModified: "",
+            created: "",
+            perm: "rw",
+          },
+        },
         panels: state.current?.path === action.name ? state.panels : {
           ...state.panels,
           // Hide these by default to avoid flickering

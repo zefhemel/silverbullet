@@ -13,8 +13,8 @@ import type { FilterOption } from "@silverbulletmd/silverbullet/type/client";
 import { EventHook } from "../common/hooks/event.ts";
 import type { AppCommand } from "$lib/command.ts";
 import {
-  type PageState,
-  parsePageRefFromURI,
+  type LocationState,
+  parseLocationRefFromURI,
   PathPageNavigator,
 } from "./navigator.ts";
 
@@ -42,9 +42,9 @@ import { HttpSpacePrimitives } from "$common/spaces/http_space_primitives.ts";
 import { FallbackSpacePrimitives } from "$common/spaces/fallback_space_primitives.ts";
 import { FilteredSpacePrimitives } from "$common/spaces/filtered_space_primitives.ts";
 import {
-  encodePageRef,
+  encodeLocationRef,
   encodePageURI,
-  validatePageName,
+  parseLocationRef,
 } from "@silverbulletmd/silverbullet/lib/page_ref";
 import { ClientSystem } from "./client_system.ts";
 import { createEditorState } from "./editor_state.ts";
@@ -63,7 +63,7 @@ import { DataStoreSpacePrimitives } from "$common/spaces/datastore_space_primiti
 
 import { ensureSpaceIndex } from "$common/space_index.ts";
 import { renderTheTemplate } from "$common/syscalls/template.ts";
-import type { PageRef } from "../plug-api/lib/page_ref.ts";
+import type { LocationRef } from "../plug-api/lib/page_ref.ts";
 import { ReadOnlySpacePrimitives } from "$common/spaces/ro_space_primitives.ts";
 import type { KvPrimitives } from "$lib/data/kv_primitives.ts";
 import {
@@ -77,6 +77,7 @@ import { findNodeMatching } from "@silverbulletmd/silverbullet/lib/tree";
 import type { AspiringPageObject } from "../plugs/index/page_links.ts";
 import type { Config, ConfigContainer } from "../type/config.ts";
 import { diffAndPrepareChanges } from "./cm_util.ts";
+import { DedicatedEditor } from "./dedicated_editor.ts";
 
 const frontMatterRegex = /^---\n(([^\n]|\n)*?)---\n/;
 
@@ -120,6 +121,9 @@ export class Client implements ConfigContainer {
   keyHandlerCompartment?: Compartment;
   indentUnitCompartment?: Compartment;
 
+  // Dedicated editors
+  dedicatedEditor: DedicatedEditor | null = null;
+
   private pageNavigator!: PathPageNavigator;
 
   private dbPrefix: string;
@@ -136,7 +140,7 @@ export class Client implements ConfigContainer {
   fullSyncCompleted = false;
   syncService!: ISyncService;
 
-  private onLoadPageRef: PageRef;
+  private onLoadLocationRef: LocationRef;
 
   constructor(
     private parent: Element,
@@ -149,7 +153,7 @@ export class Client implements ConfigContainer {
     // Generate a semi-unique prefix for the database so not to reuse databases for different space paths
     this.dbPrefix = "" +
       simpleHash(globalThis.silverBulletConfig.spaceFolderPath);
-    this.onLoadPageRef = parsePageRefFromURI();
+    this.onLoadLocationRef = parseLocationRefFromURI();
   }
 
   /**
@@ -252,6 +256,7 @@ export class Client implements ConfigContainer {
 
     // Regularly sync the currently open file
     setInterval(() => {
+      // TODO: Implement syncing for attachments
       try {
         this.syncService.syncFile(`${this.currentPage}.md`).catch((e: any) => {
           console.error("Interval sync error", e);
@@ -263,6 +268,7 @@ export class Client implements ConfigContainer {
 
     // Let's update the local page list cache asynchronously
     this.updatePageListCache().catch(console.error);
+    this.updateAttachmentListCache().catch(console.error);
   }
 
   async loadConfig() {
@@ -280,6 +286,7 @@ export class Client implements ConfigContainer {
   }
 
   private async initSync() {
+    // TODO: How is this going to impact attachment editors. Need to investigate
     this.syncService.start();
 
     // We're still booting, if a initial sync has already been completed we know this is the initial sync
@@ -352,7 +359,9 @@ export class Client implements ConfigContainer {
     );
   }
 
-  private navigateWithinPage(pageState: PageState) {
+  private navigateWithinPage(pageState: LocationState) {
+    if (pageState.kind === "attachment") return;
+
     // Did we end up doing anything in terms of internal navigation?
     let adjustedPosition = false;
 
@@ -475,30 +484,34 @@ export class Client implements ConfigContainer {
 
     await this.pageNavigator.init();
 
-    this.pageNavigator.subscribe(async (pageState) => {
-      console.log("Now navigating to", pageState);
+    this.pageNavigator.subscribe(async (locationState) => {
+      console.log("Now navigating to", locationState.page);
 
-      await this.loadPage(pageState.page);
+      if (locationState.kind === "page") {
+        await this.loadPage(locationState.page);
+      } else {
+        await this.loadDedicatedEditor(locationState.page);
+      }
 
       // Setup scroll position, cursor position, etc
-      this.navigateWithinPage(pageState);
+      this.navigateWithinPage(locationState);
 
       // Persist this page as the last opened page, we'll use this for cold start PWA loads
       await this.stateDataStore.set(
-        ["client", "lastOpenedPage"],
-        pageState.page,
+        ["client", "lastOpenedPath"],
+        locationState.page,
       );
     });
 
     if (location.hash === "#boot" && this.config.pwaOpenLastPage !== false) {
       // Cold start PWA load
-      const lastPage = await this.stateDataStore.get([
+      const lastPath = await this.stateDataStore.get([
         "client",
-        "lastOpenedPage",
+        "lastOpenedPath",
       ]);
-      if (lastPage) {
-        console.log("Navigating to last opened page", lastPage);
-        await this.navigate({ page: lastPage });
+      if (lastPath) {
+        console.log("Navigating to last opened page", lastPath.path);
+        await this.navigate(parseLocationRef(lastPath));
       }
     }
     setTimeout(() => {
@@ -596,6 +609,7 @@ export class Client implements ConfigContainer {
         newHash: number,
       ) => {
         // Only reload when watching the current page (to avoid reloading when switching pages)
+        // TODO: Fix this not doing anything for attachments
         if (
           this.space.watchInterval && `${this.currentPage}.md` === path &&
           // Avoid reloading if the page was just saved (5s window)
@@ -646,10 +660,21 @@ export class Client implements ConfigContainer {
     return localSpacePrimitives;
   }
 
+  // Note: This is a legacy method, which only makes sense when the current editor is a page editor
   get currentPage(): string {
-    return this.ui.viewState.currentPage !== undefined
-      ? this.ui.viewState.currentPage
-      : this.onLoadPageRef.page; // best effort
+    return this.ui.viewState.current !== undefined
+      ? this.ui.viewState.current.path
+      : this.onLoadLocationRef.page; // best effort
+  }
+
+  currentPath(extension: boolean = false): string {
+    if (this.ui.viewState.current !== undefined) {
+      return this.ui.viewState.current.path +
+        ((this.ui.viewState.current.kind === "page" && extension) ? ".md" : "");
+    } else {
+      return this.onLoadLocationRef.page +
+        ((this.onLoadLocationRef.kind === "page" && extension) ? ".md" : "");
+    }
   }
 
   dispatchAppEvent(name: AppEvent, ...args: any[]): Promise<any[]> {
@@ -672,51 +697,64 @@ export class Client implements ConfigContainer {
               // No unsaved changes, or read-only mode, not gonna save
               return resolve();
             }
-            console.log("Saving page", this.currentPage);
-            this.dispatchAppEvent(
-              "editor:pageSaving",
-              this.currentPage,
-            );
-            this.space
-              .writePage(
+
+            if (this.isDedicatedEditor()) {
+              // TODO Implement saving for dedicated Editors
+              // Should we send page Saving in this case
+              console.warn(
+                "Saving has not yet been implemented for attachments",
+              );
+
+              return resolve();
+            } else {
+              console.log("Saving page", this.currentPage);
+              // TODO: also need some kind of event here for attachment saving
+              this.dispatchAppEvent(
+                "editor:pageSaving",
                 this.currentPage,
-                this.editorView.state.sliceDoc(0),
-                true,
-              )
-              .then(async (meta) => {
-                this.ui.viewDispatch({ type: "page-saved" });
-                await this.dispatchAppEvent(
-                  "editor:pageSaved",
+              );
+              this.space
+                .writePage(
                   this.currentPage,
-                  meta,
-                );
+                  this.editorView.state.sliceDoc(0),
+                  true,
+                )
+                .then(async (meta) => {
+                  // Also need to keep track of this for attachments
+                  this.ui.viewDispatch({ type: "page-saved" });
+                  await this.dispatchAppEvent(
+                    "editor:pageSaved",
+                    this.currentPage,
+                    meta,
+                  );
 
-                // At this all the essential stuff is done, let's proceed
-                resolve();
+                  // At this all the essential stuff is done, let's proceed
+                  resolve();
 
-                // In the background we'll fetch any enriched meta data, if any
-                const enrichedMeta = await this.clientSystem.getObjectByRef<
-                  PageMeta
-                >(
-                  this.currentPage,
-                  "page",
-                  this.currentPage,
-                );
-                if (enrichedMeta) {
-                  this.ui.viewDispatch({
-                    type: "update-current-page-meta",
-                    meta: enrichedMeta,
-                  });
-                }
-              })
-              .catch((e) => {
-                this.flashNotification(
-                  "Could not save page, retrying again in 10 seconds",
-                  "error",
-                );
-                this.saveTimeout = setTimeout(this.save.bind(this), 10000);
-                reject(e);
-              });
+                  // In the background we'll fetch any enriched meta data, if any
+                  const enrichedMeta = await this.clientSystem.getObjectByRef<
+                    PageMeta
+                  >(
+                    this.currentPage,
+                    "page",
+                    this.currentPage,
+                  );
+                  if (enrichedMeta) {
+                    this.ui.viewDispatch({
+                      type: "update-current-page-meta",
+                      meta: enrichedMeta,
+                    });
+                  }
+                })
+                .catch((e) => {
+                  this.flashNotification(
+                    "Could not save page, retrying again in 10 seconds",
+                    "error",
+                  );
+                  this.saveTimeout = setTimeout(this.save.bind(this), 10000);
+                  reject(e);
+                });
+            }
           } else {
             resolve();
           }
@@ -891,7 +929,7 @@ export class Client implements ConfigContainer {
           this,
           this.currentPage,
           editorView.state.sliceDoc(),
-          this.ui.viewState.currentPageMeta?.perm === "ro",
+          this.ui.viewState.current?.meta?.perm === "ro",
         ),
       );
       if (editorView.contentDOM) {
@@ -1017,16 +1055,23 @@ export class Client implements ConfigContainer {
       // Some other modal UI element is visible, don't focus editor now
       return;
     }
-    this.editorView.focus();
+
+    if (this.isDedicatedEditor()) {
+      // TODO: Send focusing message to dedicated editor
+    } else {
+      this.editorView.focus();
+    }
   }
 
   async navigate(
-    pageRef: PageRef,
+    locationRef: LocationRef,
     replaceState = false,
     newWindow = false,
   ) {
-    if (!pageRef.page) {
-      pageRef.page = cleanPageRef(
+    // TODO: We really be using typescript and using empty string for specific cases
+    if (!locationRef.page) {
+      locationRef.kind = "page";
+      locationRef.page = cleanPageRef(
         await renderTheTemplate(
           this.config.indexPage,
           {},
@@ -1036,19 +1081,20 @@ export class Client implements ConfigContainer {
       );
     }
 
-    try {
-      validatePageName(pageRef.page);
-    } catch (e: any) {
-      return this.flashNotification(e.message, "error");
-    }
+    // TODO: Implement more generic validation
+    // try {
+    //   validatePageName(pageRef.path);
+    // } catch (e: any) {
+    //   return this.flashNotification(e.message, "error");
+    // }
 
     if (newWindow) {
       console.log(
         "Navigating to new page in new window",
-        `${location.origin}/${encodePageURI(encodePageRef(pageRef))}`,
+        `${location.origin}/${encodePageURI(encodeLocationRef(locationRef))}`,
       );
       const win = globalThis.open(
-        `${location.origin}/${encodePageURI(encodePageRef(pageRef))}`,
+        `${location.origin}/${encodePageURI(encodeLocationRef(locationRef))}`,
         "_blank",
       );
       if (win) {
@@ -1058,20 +1104,65 @@ export class Client implements ConfigContainer {
     }
 
     await this.pageNavigator!.navigate(
-      pageRef,
+      locationRef,
       replaceState,
     );
     this.focus();
   }
 
+  async loadDedicatedEditor(path: string) {
+    // TODO: Check if correct editor is already loaded and if so use this one
+    let doc;
+
+    this.ui.viewDispatch({
+      type: "dedicated-editor-loading",
+      name: path,
+    });
+
+    try {
+      doc = await this.space.readAttachment(path);
+    } catch (e: any) {
+      if (e.message.includes("Not found")) {
+        // TODO: load index page somehow
+        console.warn("TODO: Load index page");
+        return;
+      } else {
+        this.flashNotification(
+          `Could not load dedicated editor ${path}: ${e.message}`,
+          "error",
+        );
+
+        // TODO: Revert back to the last page
+        console.warn("Revert back to old page");
+        return;
+      }
+    }
+
+    await this.switchToDedicatedEditor(doc.meta.extension);
+
+    this.ui.viewDispatch({
+      type: "dedicated-editor-loaded",
+      meta: doc.meta,
+    });
+
+    if (!this.dedicatedEditor) {
+      // TODO: Throw some kind of error and revert back
+      return;
+    }
+
+    this.dedicatedEditor.setContent(doc.data, doc.meta);
+  }
+
   async loadPage(pageName: string) {
     const loadingDifferentPage = pageName !== this.currentPage;
     const editorView = this.editorView;
+    // TODO: Can now also be a previous dedicated editor
     const previousPage = this.currentPage;
 
     // Persist current page state and nicely close page
     if (previousPage) {
       // this.openPages.saveState(previousPage);
+      // TODO: Is this important to me?
       this.space.unwatchPage(previousPage);
       if (previousPage !== pageName) {
         await this.save(true);
@@ -1118,6 +1209,7 @@ export class Client implements ConfigContainer {
           "error",
         );
         if (previousPage) {
+          // TODO: Old metadata is now scrabbled here
           this.ui.viewDispatch({
             type: "page-loading",
             name: previousPage,
@@ -1126,6 +1218,10 @@ export class Client implements ConfigContainer {
 
         return false;
       }
+    }
+
+    if (this.isDedicatedEditor()) {
+      this.switchToPageEditor();
     }
 
     this.ui.viewDispatch({
@@ -1200,6 +1296,42 @@ export class Client implements ConfigContainer {
       "--editor-indent-multiplier",
       indentMultiplier.toString(),
     );
+  }
+
+  isDedicatedEditor(): this is { dedicatedEditor: DedicatedEditor } & this {
+    return this.dedicatedEditor !== null;
+  }
+
+  switchToPageEditor() {
+    if (!this.isDedicatedEditor()) return;
+
+    this.dedicatedEditor.destroy();
+    // @ts-ignore: This is there the hacked type-guard from isDedicatedEditor fails
+    this.dedicatedEditor = null;
+
+    this.rebuildEditorState();
+
+    document.getElementById("sb-editor")!.classList.remove("hide-cm");
+  }
+
+  async switchToDedicatedEditor(extension: string) {
+    if (this.dedicatedEditor) {
+      this.dedicatedEditor.destroy();
+    }
+
+    // This is probably not the best way to hide the codemirror editor, but it works
+    document.getElementById("sb-editor")!.classList.add("hide-cm");
+
+    this.dedicatedEditor = new DedicatedEditor(
+      document.getElementById("sb-editor")!,
+    );
+
+    await this.dedicatedEditor.init(this, extension);
+
+    // We have to rebuild the editor state here to update the keymap correctly
+    // This is a little hacky but any other solution would pose a larger rewrite
+    this.rebuildEditorState();
+    this.editorView.contentDOM.blur();
   }
 
   tweakEditorDOM(contentDOM: HTMLElement) {

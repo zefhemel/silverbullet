@@ -115,7 +115,7 @@ export class MainUI {
           <PageNavigator
             allAttachments={viewState.allAttachments}
             allPages={viewState.allPages}
-            extensions={new Set(client.clientSystem.dedicatedEditorHook.editorCallbacks.keys())}
+            extensions={new Set(Array.from(client.clientSystem.dedicatedEditorHook.dedicatedEditors.values()).flatMap(({ extensions }) => extensions))}
             currentPath={client.currentPath()}
             mode={viewState.pageNavigatorMode}
             completer={client.miniEditorComplete.bind(client)}
@@ -137,7 +137,7 @@ export class MainUI {
               safeRun(async () => {
                 const attachmentMeta = viewState.allAttachments.find((attachment) => attachment.name === name);
 
-                if (type === "attachment" && !client.clientSystem.dedicatedEditorHook.editorCallbacks.has(attachmentMeta!.extension)) {
+                if (type === "attachment" && !Array.from(client.clientSystem.dedicatedEditorHook.dedicatedEditors.values()).some(({extensions}) => extensions.includes(attachmentMeta!.extension))) {
                   const options: string[] = ["Delete", "Rename"]
 
                   const option = await client.filterBox("Modify", options.map(x => ({name: x} as FilterOption)), "There is no editor for this file type. Modify the selected attachment");

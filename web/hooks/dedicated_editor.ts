@@ -4,12 +4,16 @@ import type { DedicatedEditorCallback } from "@silverbulletmd/silverbullet/types
 import type { System } from "$lib/plugos/system.ts";
 
 export class DedicatedEditorHook implements Hook<DedicatedEditorT> {
-  editorCallbacks = new Map<string, DedicatedEditorCallback>();
+  dedicatedEditors = new Map<
+    string,
+    { extensions: string[]; callback: DedicatedEditorCallback }
+  >();
 
   constructor() {}
 
+  // TODO: Make sure there are not two or more editors for the same extension
   collectAllDedicatedEditors(system: System<DedicatedEditorT>) {
-    this.editorCallbacks.clear();
+    this.dedicatedEditors.clear();
     for (const plug of system.loadedPlugs.values()) {
       for (
         const [name, functionDef] of Object.entries(
@@ -24,12 +28,10 @@ export class DedicatedEditorHook implements Hook<DedicatedEditorT> {
           ? functionDef.editor
           : [functionDef.editor];
 
-        for (const key of keys) {
-          this.editorCallbacks.set(
-            key,
-            () => plug.invoke(name, []),
-          );
-        }
+        this.dedicatedEditors.set(
+          name,
+          { extensions: keys, callback: () => plug.invoke(name, []) },
+        );
       }
     }
   }

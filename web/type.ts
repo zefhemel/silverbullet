@@ -114,6 +114,8 @@ export type Action =
   | { type: "page-loading"; name: string }
   | { type: "page-changed" }
   | { type: "page-saved" }
+  | { type: "dedicated-editor-loaded"; meta: AttachmentMeta }
+  | { type: "dedicated-editor-loading"; name: string }
   | { type: "sync-change"; syncSuccess: boolean }
   | { type: "update-current-page-meta"; meta: PageMeta }
   | { type: "update-page-list"; allPages: PageMeta[] }

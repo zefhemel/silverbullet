@@ -13,29 +13,35 @@ const tagRegex = new RegExp(mdTagRegex.source, "g");
 export function PageNavigator({
   allPages,
   allAttachments,
+  extensions,
   onNavigate,
   onModeSwitch,
   completer,
   vimMode,
   mode,
   darkMode,
-  currentPage,
+  currentPath,
 }: {
   allAttachments: AttachmentMeta[];
   allPages: PageMeta[];
+  extensions: Set<string>;
   vimMode: boolean;
   darkMode: boolean;
   mode: "page" | "meta" | "attachment" | "all";
   onNavigate: (page: string | undefined, type: "attachment" | "page") => void;
   onModeSwitch: (mode: "page" | "meta" | "attachment" | "all") => void;
   completer: (context: CompletionContext) => Promise<CompletionResult | null>;
-  currentPage?: string;
+  currentPath?: string;
 }) {
   const options: FilterOption[] = [];
 
   if (mode === "attachment" || mode === "all") {
     for (const attachmentMeta of allAttachments) {
-      const orderId = -new Date(attachmentMeta.lastModified).getTime();
+      let orderId = -new Date(attachmentMeta.lastModified).getTime();
+
+      if (currentPath && currentPath === attachmentMeta.name) {
+        orderId = Infinity;
+      }
 
       // Can't really at tags to attachments as of right now, but maybe in the future
       let description: string | undefined;
@@ -51,7 +57,7 @@ export function PageNavigator({
         description,
         orderId: orderId,
         hint: attachmentMeta.name.split(".").pop()?.toUpperCase(),
-        hintInactive: true,
+        hintInactive: !extensions.has(attachmentMeta.extension),
       });
     }
   }
@@ -69,7 +75,7 @@ export function PageNavigator({
         orderId = -pageMeta.lastOpened;
       }
       // Or it's the currently open page
-      if (currentPage && currentPage === pageMeta.name || pageMeta._isAspiring) {
+      if (currentPath && currentPath === pageMeta.name || pageMeta._isAspiring) {
         // ... then we put it all the way to the end
         orderId = Infinity;
       }
@@ -138,14 +144,15 @@ export function PageNavigator({
     }
   }
 
-  let completePrefix = currentPage + "/";
-  if (currentPage && currentPage.includes("/")) {
-    const pieces = currentPage.split("/");
+  let completePrefix = currentPath + "/";
+  if (currentPath && currentPath.includes("/")) {
+    const pieces = currentPath.split("/");
     completePrefix = pieces.slice(0, pieces.length - 1).join("/") + "/";
-  } else if (currentPage && currentPage.includes(" ")) {
-    completePrefix = currentPage.split(" ")[0] + " ";
+  } else if (currentPath && currentPath.includes(" ")) {
+    completePrefix = currentPath.split(" ")[0] + " ";
   }
 
+  // TODO: Allow new doesn't seem to work
   const allowNew = mode !== "attachment";
   const creatablePageNoun = mode !== "all" ? mode : "page";
   const openablePageNoun = mode !== "all" ? mode : "page or attachment";
