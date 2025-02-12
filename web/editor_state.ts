@@ -374,24 +374,30 @@ export function createCommandKeyBindings(client: Client): KeyBinding[] {
 }
 
 export function createKeyBindings(client: Client): Extension {
-  return keymap.of([
-    ...createCommandKeyBindings(client),
-    ...createSmartQuoteKeyBindings(client),
-    ...closeBracketsKeymap,
-    ...client.ui.viewState.uiOptions.vimMode
-      ? [
-        // Workaround for https://github.com/replit/codemirror-vim/issues/182;
-        // without this, Enter does nothing for ordinary paragraphs in insert
-        // mode.
-        {
-          key: "Enter",
-          run: insertNewlineAndIndent,
-          shift: insertNewlineAndIndent,
-        },
-      ]
-      : standardKeymap,
-    ...completionKeymap,
-    { key: "Tab", run: acceptCompletion },
-    indentWithTab,
-  ]);
+  if (client.isDedicatedEditor()) {
+    return keymap.of([
+      ...createCommandKeyBindings(client),
+    ]);
+  } else {
+    return keymap.of([
+      ...createCommandKeyBindings(client),
+      ...createSmartQuoteKeyBindings(client),
+      ...closeBracketsKeymap,
+      ...client.ui.viewState.uiOptions.vimMode
+        ? [
+          // Workaround for https://github.com/replit/codemirror-vim/issues/182;
+          // without this, Enter does nothing for ordinary paragraphs in insert
+          // mode.
+          {
+            key: "Enter",
+            run: insertNewlineAndIndent,
+            shift: insertNewlineAndIndent,
+          },
+        ]
+        : standardKeymap,
+      ...completionKeymap,
+      { key: "Tab", run: acceptCompletion },
+      indentWithTab,
+    ]);
+  }
 }
