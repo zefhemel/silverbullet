@@ -77,7 +77,7 @@ export async function renamePageLinkCommand() {
  * @returns True if the rename succeeded; otherwise, false.
  */
 export async function renameAttachmentCommand(cmdDef: any) {
-  const oldName: string = cmdDef.oldAttachment;
+  const oldName: string = cmdDef.oldAttachment || await editor.getCurrentPath();
   const newName: string = cmdDef.attachment ||
     await editor.prompt(`Rename ${oldName} to:`, oldName);
   if (!newName) {
@@ -252,6 +252,10 @@ async function renameAttachment(
   // Move the file
   const oldFile = await space.readAttachment(oldName);
   const newFileMeta = await space.writeAttachment(newName, oldFile);
+
+  if (await editor.getCurrentPath() === oldName) {
+    await editor.navigate({ kind: "attachment", page: newName }, true);
+  }
 
   // Handling the edge case of a changing file name just in casing on a case insensitive FS
   const oldFileMeta = await space.getAttachmentMeta(oldName);

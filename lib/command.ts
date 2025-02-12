@@ -39,5 +39,6 @@ export function isValidEditor(
     (currentEditor === undefined &&
       requiredEditor === "page") ||
     (requiredEditor === "any") ||
-    (currentEditor === requiredEditor);
+    (currentEditor === requiredEditor) ||
+    (currentEditor !== undefined && requiredEditor === "notpage");
 }

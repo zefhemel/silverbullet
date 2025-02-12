@@ -194,9 +194,12 @@ functions:
       requireMode: rw
       requireEditor: page
 
-  # TODO TODO TODO TODO
   renameAttachmentCommand:
     path: "./refactor.ts:renameAttachmentCommand"
+    command:
+      name: "Attachment: Rename Attachment Page"
+      requireMode: rw
+      requireEditor: notpage
 
   # Refactoring Commands
   extractToPageCommand:
