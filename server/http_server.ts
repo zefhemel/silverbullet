@@ -96,6 +96,15 @@ export class HttpServer {
             console.error("Error server-side rendering page", e);
           }
         }
+      } else {
+        // If it it's a file with an extension and it doesn't exist we can't really create a new one/recover
+        try {
+          await spaceServer.spacePrimitives.getFileMeta(`${pageName}`);
+        } catch (e: any) {
+          if (e.message !== "Not found") {
+            return c.notFound();
+          }
+        }
       }
     }
 
@@ -153,6 +162,7 @@ export class HttpServer {
     this.app.use("*", (c) => {
       const url = new URL(c.req.url);
       const pageName = decodePageURI(url.pathname.slice(1));
+      console.log("Good guess", pageName);
       return this.renderHtmlPage(this.spaceServer, pageName, c);
     });
 
