@@ -215,6 +215,7 @@ export function fileMetaToAttachmentMeta(
       tag: "attachment",
       created: localDateString(new Date(fileMeta.created)),
       lastModified: localDateString(new Date(fileMeta.lastModified)),
+      extension: fileMeta.name.split(".").pop()?.toLowerCase(),
     } as AttachmentMeta;
   } catch (e) {
     console.error("Failed to convert fileMeta to attachmentMeta", fileMeta, e);

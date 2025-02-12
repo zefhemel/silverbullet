@@ -40,6 +40,7 @@ export type AttachmentMeta = ObjectValue<
     lastModified: string;
     size: number;
     perm: "ro" | "rw";
+    extension: string;
   } & Record<string, any>
 >;
 
