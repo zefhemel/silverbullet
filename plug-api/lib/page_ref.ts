@@ -99,7 +99,6 @@ export function parseAttachmentRef(name: string): AttachmentRef {
 }
 
 export function parseLocationRef(name: string): LocationRef {
-  // TODO: Can we actually use lookslikepathwithextension here? What are those weird edge cases handled in there?
   return looksLikePathWithExtension(name)
     ? parseAttachmentRef(name)
     : parsePageRef(name);
