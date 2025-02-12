@@ -33,6 +33,12 @@ export function editorSyscalls(client: Client): SysCallMapping {
     "editor.getCurrentPageMeta": (): PageMeta | undefined => {
       return client.ui.viewState.current?.meta;
     },
+    "editor.getCurrentPath": (_ctx, extension: boolean): string => {
+      return client.currentPath(extension);
+    },
+    "editor.getCurrentEditor": (): string => {
+      return client.dedicatedEditor?.name || "page";
+    },
     "editor.getText": () => {
       return client.editorView.state.sliceDoc();
     },

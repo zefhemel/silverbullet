@@ -26,6 +26,23 @@ export function getCurrentPageMeta(): Promise<PageMeta | undefined> {
 }
 
 /**
+ * Returns the name of the page or attachment currently open in the editor.
+ * @param extension If true returns page paths with the their `.md` extension
+ * @returns the current page path
+ */
+export function getCurrentPath(extension: boolean = false): Promise<string> {
+  return syscall("editor.getCurrentPath", extension);
+}
+
+/**
+ * Returns the name of the currently open editor.
+ * @returns the name of the current editor
+ */
+export function getCurrentEditor(): Promise<string> {
+  return syscall("editor.getCurrentEditor");
+}
+
+/**
  * Returns the full text of the currently open page
  */
 export function getText(): Promise<string> {
