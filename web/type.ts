@@ -13,8 +13,18 @@ export type PanelConfig = {
 };
 
 export type AppViewState = {
-  currentPage?: string;
-  currentPageMeta?: PageMeta;
+  current?:
+    | {
+      kind: "page";
+      meta: PageMeta;
+      path: string;
+    }
+    | {
+      kind: "attachment";
+      meta: AttachmentMeta;
+      path: string;
+    };
+
   allPages: PageMeta[];
   allAttachments: AttachmentMeta[];
 

@@ -11,8 +11,13 @@ export default function reducer(
       return {
         ...state,
         isLoading: true,
-        currentPage: action.name,
-        panels: state.currentPage === action.name ? state.panels : {
+        // TODO: is it really necessary to set this here already?
+        // current: {
+        //   kind: "page",
+        //   path: action.name,
+        //   meta: {},
+        // },
+        panels: state.current?.path === action.name ? state.panels : {
           ...state.panels,
           // Hide these by default to avoid flickering
           top: {},
@@ -30,8 +35,11 @@ export default function reducer(
             ? { ...pageMeta, lastOpened: Date.now() }
             : pageMeta
         ),
-        currentPage: action.meta.name,
-        currentPageMeta: action.meta,
+        current: {
+          kind: "page",
+          path: action.meta.name,
+          meta: action.meta as PageMeta,
+        },
       };
     }
     case "page-changed":
@@ -50,9 +58,14 @@ export default function reducer(
       state.allPages = state.allPages.map((pageMeta) =>
         pageMeta.name === action.meta.name ? action.meta : pageMeta
       );
+      // Can't update page meta if not on a page
+      if (state.current?.kind !== "page") return state;
       return {
         ...state,
-        currentPageMeta: action.meta,
+        current: {
+          ...state.current,
+          meta: action.meta,
+        },
       };
     }
     case "sync-change":
@@ -76,7 +89,7 @@ export default function reducer(
         if (oldPageMetaItem && oldPageMetaItem.lastOpened) {
           pageMeta.lastOpened = oldPageMetaItem.lastOpened;
         }
-        if (pageMeta.name === state.currentPage) {
+        if (pageMeta.name === state.current?.path) {
           currPageMeta = pageMeta;
         }
       }
@@ -85,7 +98,7 @@ export default function reducer(
         allPages: action.allPages,
       };
       if (currPageMeta) {
-        newState.currentPageMeta = currPageMeta;
+        newState.current!.meta = currPageMeta;
       }
       return newState;
     }

@@ -2,12 +2,24 @@
  * Represents a reference to a page, with optional position, anchor and header.
  */
 export type PageRef = {
+  kind: "page";
   page: string;
   pos?: number | { line: number; column: number };
   anchor?: string;
   header?: string;
   meta?: boolean;
 };
+
+/**
+ * Represents a reference to an attachment, with optional position, anchor and header.
+ */
+export type AttachmentRef = {
+  kind: "attachment";
+  // This isn't really referring to a page, but this saves us from a lot of name changing
+  page: string;
+};
+
+export type LocationRef = PageRef | AttachmentRef;
 
 /**
  * Checks if a name looks like a full path (with a file extension), is not a conflicted file and not a search page.
@@ -48,7 +60,7 @@ export function parsePageRef(name: string): PageRef {
   if (name.startsWith("[[") && name.endsWith("]]")) {
     name = name.slice(2, -2);
   }
-  const pageRef: PageRef = { page: name };
+  const pageRef: PageRef = { kind: "page", page: name };
   if (pageRef.page.startsWith("^")) {
     // A caret prefix means we're looking for a meta page, but that doesn't matter for most use cases
     pageRef.page = pageRef.page.slice(1);
@@ -82,6 +94,17 @@ export function parsePageRef(name: string): PageRef {
   return pageRef;
 }
 
+export function parseAttachmentRef(name: string): AttachmentRef {
+  return { kind: "attachment", page: name };
+}
+
+export function parseLocationRef(name: string): LocationRef {
+  // TODO: Can we actually use lookslikepathwithextension here? What are those weird edge cases handled in there?
+  return looksLikePathWithExtension(name)
+    ? parseAttachmentRef(name)
+    : parsePageRef(name);
+}
+
 /**
  * The inverse of parsePageRef, encodes a PageRef object into a string.
  * @param pageRef the page reference to encode
@@ -106,6 +129,16 @@ export function encodePageRef(pageRef: PageRef): string {
     name += `#${pageRef.header}`;
   }
   return name;
+}
+
+export function encodeAttachmentRef(attachmentRef: AttachmentRef): string {
+  return attachmentRef.page;
+}
+
+export function encodeLocationRef(locationRef: LocationRef): string {
+  return locationRef.kind === "page"
+    ? encodePageRef(locationRef)
+    : encodeAttachmentRef(locationRef);
 }
 
 /**

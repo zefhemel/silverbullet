@@ -80,12 +80,12 @@ export class MainUI {
     const client = this.client;
 
     useEffect(() => {
-      if (viewState.currentPage) {
+      if (viewState.current) {
         document.title =
-          (viewState.currentPageMeta?.pageDecoration?.prefix ?? "") +
-          viewState.currentPage;
+          (viewState.current.meta?.pageDecoration?.prefix ?? "") +
+          viewState.current.path;
       }
-    }, [viewState.currentPage, viewState.currentPageMeta]);
+    }, [viewState.current]);
 
     useEffect(() => {
       client.tweakEditorDOM(
@@ -115,7 +115,8 @@ export class MainUI {
           <PageNavigator
             allAttachments={viewState.allAttachments}
             allPages={viewState.allPages}
-            currentPage={client.currentPage}
+            extensions={new Set(client.clientSystem.dedicatedEditorHook.editorCallbacks.keys())}
+            currentPath={client.currentPath()}
             mode={viewState.pageNavigatorMode}
             completer={client.miniEditorComplete.bind(client)}
             vimMode={viewState.uiOptions.vimMode}
@@ -134,7 +135,9 @@ export class MainUI {
               if (!name) return;
 
               safeRun(async () => {
-                if (type === "attachment") {
+                const attachmentMeta = viewState.allAttachments.find((attachment) => attachment.name === name);
+
+                if (type === "attachment" && !client.clientSystem.dedicatedEditorHook.editorCallbacks.has(attachmentMeta!.extension)) {
                   const options: string[] = ["Delete", "Rename"]
 
                   const option = await client.filterBox("Modify", options.map(x => ({name: x} as FilterOption)), "There is no editor for this file type. Modify the selected attachment");
@@ -154,7 +157,7 @@ export class MainUI {
                     }
                   }
                 } else {
-                  await client.navigate({ page: name });
+                  await client.navigate({ kind: type, page: name });
                 }
               });
             }}
@@ -223,7 +226,7 @@ export class MainUI {
           />
         )}
         <TopBar
-          pageName={viewState.currentPage}
+          pageName={viewState.current?.path || ""}
           notifications={viewState.notifications}
           syncFailures={viewState.syncFailures}
           unsavedChanges={viewState.unsavedChanges}
@@ -233,9 +236,11 @@ export class MainUI {
           progressPerc={viewState.progressPerc}
           completer={client.miniEditorComplete.bind(client)}
           onClick={() => {
+            // TODO: Some way for all editors to scroll to top
             client.editorView.scrollDOM.scrollTop = 0;
           }}
           onRename={async (newName) => {
+            // TODO: Make this work for attachments
             if (!newName) {
               // Always move cursor to the start of the page
               client.editorView.dispatch({
@@ -349,11 +354,11 @@ export class MainUI {
               style={{ flex: viewState.panels.lhs.mode }}
             />
           )}
-          pageNamePrefix={viewState.currentPageMeta?.pageDecoration
+          pageNamePrefix={viewState.current?.meta?.pageDecoration
             ?.prefix ??
             ""}
-          cssClass={viewState.currentPageMeta?.pageDecoration?.cssClasses
-            ? viewState.currentPageMeta?.pageDecoration?.cssClasses
+          cssClass={viewState.current?.meta?.pageDecoration?.cssClasses
+            ? viewState.current?.meta?.pageDecoration?.cssClasses
               .join(" ").replaceAll(/[^a-zA-Z0-9-_ ]/g, "")
             : ""}
         />

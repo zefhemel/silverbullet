@@ -46,6 +46,7 @@ export function attachWidgetEventHandlers(
         return;
       }
       client.navigate({
+        kind: "page",
         page: `${tagPrefix}${extractHashtag(el.innerText)}`,
         pos: 0,
       });
