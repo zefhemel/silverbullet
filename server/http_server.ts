@@ -77,25 +77,28 @@ export class HttpServer {
     let lastModified = utcDateString(Date.now());
     if (!spaceServer.auth) {
       // Only attempt server-side rendering when this site is not protected by auth
-      try {
-        const { data, meta } = await spaceServer.spacePrimitives.readFile(
-          `${pageName}.md`,
-        );
-        lastModified = utcDateString(meta.lastModified);
+      if (!looksLikePathWithExtension(pageName)) {
+        try {
+          const { data, meta } = await spaceServer.spacePrimitives.readFile(
+            `${pageName}.md`,
+          );
+          lastModified = utcDateString(meta.lastModified);
 
-        if (c.req.header("If-Modified-Since") === lastModified) {
-          // Not modified, empty body status 304
-          return c.body(null, 304);
-        }
-        const text = new TextDecoder().decode(data);
-        const tree = parse(extendedMarkdownLanguage, text);
-        html = renderMarkdownToHtml(tree);
-      } catch (e: any) {
-        if (e.message !== "Not found") {
-          console.error("Error server-side rendering page", e);
+          if (c.req.header("If-Modified-Since") === lastModified) {
+            // Not modified, empty body status 304
+            return c.body(null, 304);
+          }
+          const text = new TextDecoder().decode(data);
+          const tree = parse(extendedMarkdownLanguage, text);
+          html = renderMarkdownToHtml(tree);
+        } catch (e: any) {
+          if (e.message !== "Not found") {
+            console.error("Error server-side rendering page", e);
+          }
         }
       }
     }
+
     // TODO: Replace this with a proper template engine
     html = this.clientAssetBundle.readTextFileSync(".client/index.html")
       .replace(
@@ -566,7 +569,7 @@ export class HttpServer {
     const filePathRegex = "/:path{[^!].*\\.[a-zA-Z0-9]+}";
     const mdExt = ".md";
 
-    this.app.get(filePathRegex, async (c) => {
+    this.app.get(filePathRegex, async (c, next) => {
       const req = c.req;
       const name = req.param("path")!;
       console.log("Requested file", name);
@@ -586,6 +589,11 @@ export class HttpServer {
         );
         return c.redirect(`/${name.slice(0, -mdExt.length)}`);
       }
+      // This is a good guess that the request comes directly from a user
+      if (req.header("Accept")?.includes("text/html")) {
+        return next();
+      }
+
       if (name.startsWith(".")) {
         // Don't expose hidden files
         return c.notFound();
