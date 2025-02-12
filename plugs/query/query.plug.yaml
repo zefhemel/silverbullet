@@ -46,8 +46,11 @@ functions:
     command:
       name: "Live Queries and Templates: Refresh All"
       key: "Alt-q"
+      requireEditor: page
 
   bakeAllWidgets:
     path: widget.ts:bakeAllWidgets
     command:
       name: "Page: Bake live blocks"
+      requireMode: rw
+      requireEditor: page

@@ -9,6 +9,7 @@ functions:
       key: "Ctrl-Shift-p"
       mac: "Cmd-Shift-p"
       requireMode: rw
+      requireEditor: page
   getPlugHTTPS:
     path: "./plugmanager.ts:getPlugHTTPS"
     events:
@@ -26,3 +27,4 @@ functions:
     command:
       name: "Plugs: Add"
       requireMode: rw
+      requireEditor: page

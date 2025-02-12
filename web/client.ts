@@ -11,7 +11,7 @@ import type { SyntaxNode } from "@lezer/common";
 import { Space } from "../common/space.ts";
 import type { FilterOption } from "@silverbulletmd/silverbullet/type/client";
 import { EventHook } from "../common/hooks/event.ts";
-import type { AppCommand } from "$lib/command.ts";
+import { type AppCommand, isValidEditor } from "$lib/command.ts";
 import {
   type LocationState,
   parseLocationRefFromURI,
@@ -1394,6 +1394,7 @@ export class Client implements ConfigContainer {
   getCommandsByContext(
     state: AppViewState,
   ): Map<string, AppCommand> {
+    const currentEditor = client.dedicatedEditor?.name;
     const commands = new Map(state.commands);
     for (const [k, v] of state.commands.entries()) {
       if (
@@ -1401,6 +1402,11 @@ export class Client implements ConfigContainer {
         (!state.showCommandPaletteContext ||
           !v.command.contexts.includes(state.showCommandPaletteContext))
       ) {
+        commands.delete(k);
+      }
+
+      const requiredEditor = v.command.requireEditor;
+      if (!isValidEditor(currentEditor, requiredEditor)) {
         commands.delete(k);
       }
     }

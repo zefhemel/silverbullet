@@ -54,6 +54,7 @@ import { parseCommand } from "$common/command.ts";
 import { safeRun } from "$lib/async.ts";
 import { codeCopyPlugin } from "./cm_plugins/code_copy.ts";
 import { disableSpellcheck } from "./cm_plugins/spell_checking.ts";
+import { isValidEditor } from "$lib/command.ts";
 
 export function createEditorState(
   client: Client,
@@ -334,7 +335,10 @@ export function createCommandKeyBindings(client: Client): KeyBinding[] {
 
   // Then add bindings for plug commands
   for (const def of client.clientSystem.commandHook.editorCommands.values()) {
-    if (def.command.key) {
+    const currentEditor = client.dedicatedEditor?.name;
+    const requiredEditor = def.command.requireEditor;
+
+    if (def.command.key && isValidEditor(currentEditor, requiredEditor)) {
       // If we've already overridden this command, skip it
       if (overriddenCommands.has(def.command.name)) {
         continue;

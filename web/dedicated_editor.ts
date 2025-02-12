@@ -4,20 +4,23 @@ import { html as skeleton } from "./dedicated_editor_skeleton.ts";
 
 export class DedicatedEditor {
   iframe!: HTMLIFrameElement;
-  // TODO: Handle focusing somehow
-  hasFocus: boolean = true;
+  name!: string;
 
   constructor(readonly parent: HTMLElement) {}
 
   async init(client: Client, extension: string) {
-    const callback = Array.from(
+    const entry = Array.from(
       client.clientSystem.dedicatedEditorHook.dedicatedEditors
-        .values(),
-    ).find(({ extensions }) => extensions.includes(extension))
-      ?.callback;
-    if (!callback) {
+        .entries(),
+    ).find(([_, { extensions }]) => extensions.includes(extension));
+
+    if (!entry) {
+      // TODO: Can we reallly throw here?
       throw new Error("Couldn't find plug for specified extension");
     }
+
+    const [name, { callback }] = entry;
+    this.name = name;
 
     const content = await callback();
 

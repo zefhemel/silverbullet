@@ -6,6 +6,7 @@ functions:
       name: "Share: Page Or Selection"
       key: "Ctrl-s"
       mac: "Cmd-s"
+      requireEditor: page
 
   clipboardShareOptions:
     path: share.ts:clipboardShareOptions

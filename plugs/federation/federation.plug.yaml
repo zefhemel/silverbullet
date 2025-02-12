@@ -48,6 +48,7 @@ functions:
     command:
       name: "Libraries: Update"
       requireMode: rw
+      requireEditor: page
   updateLibraries:
     path: library.ts:updateLibraries
     env: server
