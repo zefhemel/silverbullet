@@ -1,4 +1,3 @@
-import path from "node:path";
 import type { PageMeta } from "../plug-api/types.ts";
 import type { Action, AppViewState } from "./type.ts";
 
