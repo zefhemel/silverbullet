@@ -9,7 +9,7 @@ export async function deletePage() {
     return;
   }
   console.log("Navigating to index page");
-  await editor.navigate({ page: "" });
+  await editor.navigate({ kind: "page", page: "" });
   console.log("Deleting page from space");
   await space.deletePage(pageName);
 }
@@ -57,7 +57,7 @@ export async function copyPage(
   if (currentPage === fromName) {
     // If we're copying the current page, navigate there
     console.log("Navigating to new page");
-    await editor.navigate({ page: newName });
+    await editor.navigate({ kind: "page", page: newName });
   } else {
     // Otherwise just notify of success
     await editor.flashNotification("Page copied successfully");

@@ -165,7 +165,7 @@ export async function addPlugCommand(_cmdDef: any, uriSuggestion: string = "") {
   } else {
     space.writePage(plugsPage, plugPageContent);
   }
-  await editor.navigate({ page: plugsPage });
+  await editor.navigate({ kind: "page", page: plugsPage });
   // Here we are on the PLUGS page, if it didn't exist before it's filled with prelude
   const changeList = insertIntoPlugPage(uri, plugPageContent);
   for (const { from, to, text } of changeList) {

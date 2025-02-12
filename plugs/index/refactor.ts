@@ -222,7 +222,7 @@ async function renamePage(oldName: string, newName: string) {
 
   // Navigate to new page if currently viewing old page
   if (await editor.getCurrentPage() === oldName) {
-    await editor.navigate({ page: newName, pos: 0 }, true);
+    await editor.navigate({ kind: "page", page: newName, pos: 0 }, true);
   }
   // Handling the edge case of a changing page name just in casing on a case insensitive FS
   const oldPageMeta = await space.getPageMeta(oldName);
@@ -355,7 +355,7 @@ export async function extractToPageCommand() {
   console.log("Writing new page to space");
   await space.writePage(newName, text);
   console.log("Navigating to new page");
-  await editor.navigate({ page: newName });
+  await editor.navigate({ kind: "page", page: newName });
 }
 
 /**

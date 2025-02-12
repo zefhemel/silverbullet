@@ -76,7 +76,11 @@ async function actionClickOrActionEnter(
     }
     case "PageRef": {
       const pageName = parsePageRef(mdTree.children![0].text!).page;
-      return editor.navigate({ page: pageName, pos: 0 }, false, inNewWindow);
+      return editor.navigate(
+        { kind: "page", page: pageName, pos: 0 },
+        false,
+        inNewWindow,
+      );
     }
     case "NakedURL":
     case "URL":
@@ -154,11 +158,11 @@ export async function clickNavigate(event: ClickEvent) {
 }
 
 export async function navigateCommand(cmdDef: any) {
-  await editor.navigate({ page: cmdDef.page, pos: 0 });
+  await editor.navigate({ kind: "page", page: cmdDef.page, pos: 0 });
 }
 
 export async function navigateToPage(_cmdDef: any, pageName: string) {
-  await editor.navigate({ page: pageName, pos: 0 });
+  await editor.navigate({ kind: "page", page: pageName, pos: 0 });
 }
 
 export async function navigateToURL(_cmdDef: any, url: string) {
