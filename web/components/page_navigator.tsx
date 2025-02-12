@@ -50,6 +50,10 @@ export function PageNavigator({
         attachmentMeta.tags.map((tag) => `#${tag}`).join(" ");
       }
 
+      const isViewable = extensions.has(attachmentMeta.extension);
+
+      if (!isViewable && client.clientSystem.readOnlyMode) continue;
+
       options.push({
         type: "attachment",
         ...attachmentMeta,
@@ -57,7 +61,7 @@ export function PageNavigator({
         description,
         orderId: orderId,
         hint: attachmentMeta.name.split(".").pop()?.toUpperCase(),
-        hintInactive: !extensions.has(attachmentMeta.extension),
+        hintInactive: !isViewable,
       });
     }
   }
