@@ -373,7 +373,6 @@ functions:
     command:
       name: "Upload: File"
       requireMode: rw
-      requireEditor: page
 
   # Outline commands
   outlineMoveUp:

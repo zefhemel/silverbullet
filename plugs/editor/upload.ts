@@ -33,26 +33,39 @@ export async function saveFile(file: UploadFile) {
   if (!finalFileName) {
     return;
   }
-  const attachmentPath = resolvePath(
-    await editor.getCurrentPage(),
-    finalFileName,
-  );
-  await space.writeAttachment(attachmentPath, file.content);
 
-  const linkStyle = await system.getSpaceConfig(
-    "defaultLinkStyle",
-    defaultLinkStyle,
-  );
-  let attachmentMarkdown = "";
-  if (linkStyle === "wikilink") {
-    attachmentMarkdown = `[[${attachmentPath}]]`;
+  if (await editor.getCurrentEditor() === "page") {
+    const attachmentPath = resolvePath(
+      await editor.getCurrentPage(),
+      finalFileName,
+    );
+
+    await space.writeAttachment(attachmentPath, file.content);
+
+    const linkStyle = await system.getSpaceConfig(
+      "defaultLinkStyle",
+      defaultLinkStyle,
+    );
+    let attachmentMarkdown = "";
+    if (linkStyle === "wikilink") {
+      attachmentMarkdown = `[[${attachmentPath}]]`;
+    } else {
+      attachmentMarkdown = `[${finalFileName}](${
+        encodePageURI(finalFileName)
+      })`;
+    }
+    if (file.contentType.startsWith("image/")) {
+      attachmentMarkdown = "!" + attachmentMarkdown;
+    }
+    editor.insertAtCursor(attachmentMarkdown);
   } else {
-    attachmentMarkdown = `[${finalFileName}](${encodePageURI(finalFileName)})`;
+    const attachmentFolder = (await editor.getCurrentPath())
+      .split("/")
+      .slice(0, -1)
+      .join("/");
+
+    await space.writeAttachment(attachmentFolder + finalFileName, file.content);
   }
-  if (file.contentType.startsWith("image/")) {
-    attachmentMarkdown = "!" + attachmentMarkdown;
-  }
-  editor.insertAtCursor(attachmentMarkdown);
 }
 
 export async function uploadFile(_ctx: any, accept?: string, capture?: string) {
