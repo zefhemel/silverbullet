@@ -1,6 +1,7 @@
-import { deleteCookie, getCookie, setCookie } from "hono/helper.ts";
-import { cors } from "hono/middleware.ts";
-import { type Context, Hono, validator } from "hono/mod.ts";
+import { deleteCookie, getCookie, setCookie } from "@hono/hono/cookie";
+import { cors } from "@hono/hono/cors";
+import { type Context, Hono } from "@hono/hono";
+import { validator } from "@hono/hono/validator";
 import type { AssetBundle } from "$lib/asset_bundle/bundle.ts";
 import type {
   EndpointRequest,
@@ -22,6 +23,8 @@ import {
 import { base64Encode } from "$lib/crypto.ts";
 import { LockoutTimer } from "./lockout.ts";
 import type { AuthOptions } from "../cmd/server.ts";
+import { streamSSE } from "@hono/hono/streaming";
+
 
 const authenticationExpirySeconds = 60 * 60 * 24 * 7; // 1 week
 
@@ -200,6 +203,7 @@ export class HttpServer {
             ),
             headers: req.header(),
           } as EndpointRequest);
+
         if (responses.length === 0) {
           return ctx.text(
             "No custom endpoint handler is handling this path",
@@ -211,22 +215,92 @@ export class HttpServer {
             500,
           );
         }
+
         const response = responses[0];
         if (response.headers) {
-          for (
-            const [key, value] of Object.entries(
-              response.headers,
-            )
-          ) {
+          for (const [key, value] of Object.entries(response.headers)) {
             ctx.header(key, value);
           }
         }
         ctx.status(response.status || 200);
+
+        console.log("Response body type:", typeof response.body);
+        console.log("Response body:", response.body);
+        console.log("Response headers:", response.headers);
+        console.log("Response status:", response.status);
+
         if (typeof response.body === "string") {
+          console.log("Returning text response");
           return ctx.text(response.body);
         } else if (response.body instanceof Uint8Array) {
+          console.log("Returning Uint8Array response");
           return ctx.body(response.body);
+        // response.body never ends up being a ReadableStream, it's always an empty object.
+        // I think this is because the event system or something else is serializing/deserializing it
+        // } else if (response.body instanceof ReadableStream || response.headers["content-type"]?.includes("text/event-stream")) {
+        } else if (response.body instanceof ReadableStream) {
+          console.log("Received ReadableStream body or SSE stream");
+          console.log("response.body type: ", typeof response.body, "instanceof ReadableStream: ", response.body instanceof ReadableStream);
+          console.log("Full body: ", response.body);
+          console.log("Returning streaming response");
+          
+          if (response.headers["content-type"]?.includes("text/event-stream")) {
+            return streamSSE(ctx, async (stream) => {
+              try {
+                // Ensure response.body is a ReadableStream
+                if (response.body instanceof ReadableStream) {
+                  const reader = response.body.getReader();
+                  while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    
+                    // Convert the chunk to text and write it
+                    const text = new TextDecoder().decode(value);
+                    await stream.write(text);
+                  }
+                } else {
+                  console.error("Response body is not a ReadableStream");
+                }
+              } catch (e) {
+                console.error("Error in SSE stream:", e);
+              }
+            });
+          } else {
+            // For non-SSE streams, use regular streaming
+            ctx.header("Content-Type", response.headers["content-type"] || "application/octet-stream");
+            return ctx.body(response.body);
+          }
+        } else if (response.body?.__type === 'STREAM_PROXY') {
+          // This is kind of a hack. Because of the issue above, we need to initiate the fetch from
+          // inside this function, which means this function becomes a proxy too.
+          console.log("Creating new stream from proxy data method: ", response.body.method, " url: ", response.body.url, " headers: ", response.body.headers, " requestBody: ", response.body.requestBody);
+          const streamResponse = await fetch(response.body.url, {
+            method: response.body.method,
+            headers: response.body.headers,
+            body: JSON.stringify(response.body.requestBody),
+          });
+
+          ctx.status(streamResponse.status);
+
+          if (!streamResponse.ok) {
+            return ctx.text(`Stream proxy error: ${await streamResponse.text()}`, streamResponse.status);
+          }
+
+          return streamSSE(ctx, async (stream) => {
+            try {
+              const reader = streamResponse.body!.getReader();
+              while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                const text = new TextDecoder().decode(value);
+                await stream.write(text);
+              }
+            } catch (e) {
+              console.error("Error in SSE stream:", e);
+            }
+          });
         } else {
+          console.log("Returning JSON response");
           return ctx.json(response.body);
         }
       } catch (e: any) {

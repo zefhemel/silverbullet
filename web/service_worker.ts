@@ -82,6 +82,11 @@ self.addEventListener("fetch", (event: any) => {
         return fetch(request);
       }
 
+      // Is this a request to a custom endpoint? If so, proxy to the actual server
+      if (location.host == requestUrl.host && requestUrl.pathname.startsWith('/_/')) {
+        return fetch(request);
+      }
+
       // Any request with the X-Sync-Mode header originates from the sync engine: pass it on to the server
       if (request.headers.has("x-sync-mode")) {
         return fetch(request);

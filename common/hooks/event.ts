@@ -65,6 +65,7 @@ export class EventHook implements EventHookI {
                 promises.push((async () => {
                   try {
                     const result = await plug.invoke(name, args);
+                    console.log("Result from event dispatch for ", eventName, " is ", result);
                     if (result !== undefined) {
                       responses.push(result);
                     }

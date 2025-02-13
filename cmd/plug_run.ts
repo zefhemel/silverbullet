@@ -7,7 +7,7 @@ import { DiskSpacePrimitives } from "$common/spaces/disk_space_primitives.ts";
 import { ServerSystem } from "../server/server_system.ts";
 import { AssetBundlePlugSpacePrimitives } from "$common/spaces/asset_bundle_space_primitives.ts";
 import { LocalShell } from "../server/shell_backend.ts";
-import { Hono } from "hono/mod.ts";
+import { Hono } from "@hono/hono";
 import { DataStore } from "$lib/data/datastore.ts";
 import { DataStoreMQ } from "$lib/data/mq.datastore.ts";
 import { EventHook } from "../common/hooks/event.ts";

@@ -54,7 +54,7 @@ export class EventedSpacePrimitives implements SpacePrimitives {
       // Some other operation (read, write, list, meta) is already going on
       // this will likely trigger events, so let's not worry about any of that and avoid race condition and inconsistent data.
       console.info(
-        "alreadyFetching is on, skipping even triggering for fetchFileList.",
+        "alreadyFetching is on, skipping event triggering for fetchFileList.",
       );
       return this.wrapped.fetchFileList();
     }
