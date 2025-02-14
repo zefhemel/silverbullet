@@ -80,11 +80,13 @@ export default function reducer(
         },
       };
     }
+    case "dedicated-editor-changed":
     case "page-changed":
       return {
         ...state,
         unsavedChanges: true,
       };
+    case "dedicated-editor-saved":
     case "page-saved": {
       return {
         ...state,

@@ -210,6 +210,8 @@ export type AppEvent =
   | "editor:pageReloaded"
   | "editor:pageSaving"
   | "editor:pageSaved"
+  | "editor:attachmentSaving"
+  | "editor:attachmentSaved"
   | "editor:modeswitch"
   | "plugs:loaded"
   | "editor:pageModified";

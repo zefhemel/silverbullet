@@ -81,11 +81,19 @@ export class SyncService implements ISyncService {
       },
     );
 
-    eventHook.addLocalListener("editor:pageSaving", () => {
+    eventHook.addLocalListener("editor:attachmentLoaded", (name, _prevPage) => {
+      this.scheduleFileSync(name).catch(console.error);
+    });
+
+    const setSavingTimeout = () => {
       this.savingTimeout = setTimeout(() => {
         this.savingTimeout = undefined;
       }, 1000 * 5);
-    });
+    };
+
+    eventHook.addLocalListener("editor:pageSaving", setSavingTimeout);
+
+    eventHook.addLocalListener("editor:attachmentSaving", setSavingTimeout);
 
     eventHook.addLocalListener("editor:pageSaved", (name) => {
       if (this.savingTimeout) {
@@ -96,6 +104,18 @@ export class SyncService implements ISyncService {
       }
       const path = `${name}.md`;
       this.scheduleFileSync(path).catch(console.error);
+    });
+
+    eventHook.addLocalListener("editor:attachmentSaved", (name) => {
+      if (this.savingTimeout) {
+        clearTimeout(this.savingTimeout);
+        this.savingTimeout = undefined;
+      } else {
+        console.warn(
+          "This should not happen, savingTimeout was not set. This could be a slow dedicated editor",
+        );
+      }
+      this.scheduleFileSync(name).catch(console.error);
     });
 
     this.spaceSync.on({

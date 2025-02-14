@@ -86,10 +86,9 @@ export const html = `<!DOCTYPE html>
 
     globalThis.silverbullet = document.createDocumentFragment();
 
-    // TODO: No use rn
-    // globalThis.silverbullet.api = (obj) => {
-    //   window.parent.postMessage(obj, "*");
-    // }
+    globalThis.silverbullet.sendMessage = (type, obj) => {
+      window.parent.postMessage({ type, ...obj }, "*");
+    }
   </script>
 </head>
 

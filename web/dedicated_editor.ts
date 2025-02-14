@@ -5,8 +5,13 @@ import { html as skeleton } from "./dedicated_editor_skeleton.ts";
 export class DedicatedEditor {
   iframe!: HTMLIFrameElement;
   name!: string;
+  currentPath: string | null = null;
 
-  constructor(readonly parent: HTMLElement) {}
+  constructor(
+    readonly parent: HTMLElement,
+    readonly client: Client,
+    readonly saveMethod: (path: string, content: Uint8Array) => void,
+  ) {}
 
   async init(client: Client, extension: string) {
     const entry = Array.from(
@@ -42,10 +47,6 @@ export class DedicatedEditor {
   destroy() {
     // TODO: Send closing event & Think about how to handle last save
     globalThis.removeEventListener("message", this.messageHandler);
-    // globalThis.document.removeEventListener(
-    //   "iframe_keydown",
-    //   this.iframeKeydownHandler,
-    // );
     this.iframe.remove();
   }
 
@@ -55,9 +56,17 @@ export class DedicatedEditor {
 
   setContent(data: Uint8Array, meta: AttachmentMeta) {
     this.sendMessage({
-      type: "file_open",
+      type: "file-open",
       data,
       meta,
+    });
+
+    this.currentPath = meta.name;
+  }
+
+  requestSave() {
+    this.sendMessage({
+      type: "request-save",
     });
   }
 
@@ -67,6 +76,20 @@ export class DedicatedEditor {
     if (!data) return;
 
     switch (data.type) {
+      case "attachment-changed":
+        {
+          this.client.ui.viewDispatch({
+            type: "dedicated-editor-changed",
+          });
+          this.client.save().catch((e) => console.error("Couldn't save: ", e));
+        }
+        break;
+      case "attachment-saved":
+        {
+          if (!this.currentPath) return;
+          this.saveMethod(this.currentPath, data.data);
+        }
+        break;
       default:
         console.log("Currently no events handled here");
     }

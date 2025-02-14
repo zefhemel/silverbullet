@@ -116,6 +116,8 @@ export type Action =
   | { type: "page-saved" }
   | { type: "dedicated-editor-loaded"; meta: AttachmentMeta }
   | { type: "dedicated-editor-loading"; name: string }
+  | { type: "dedicated-editor-changed" }
+  | { type: "dedicated-editor-saved" }
   | { type: "sync-change"; syncSuccess: boolean }
   | { type: "update-current-page-meta"; meta: PageMeta }
   | { type: "update-page-list"; allPages: PageMeta[] }
