@@ -285,7 +285,6 @@ export class Client implements ConfigContainer {
   }
 
   private async initSync() {
-    // TODO: How is this going to impact attachment editors. Need to investigate
     this.syncService.start();
 
     // We're still booting, if a initial sync has already been completed we know this is the initial sync
@@ -350,9 +349,9 @@ export class Client implements ConfigContainer {
     this.eventHook.addLocalListener(
       "file:synced",
       (meta: FileMeta, direction: string) => {
-        if (meta.name.endsWith(".md") && direction === "secondary->primary") {
-          // We likely polled the currently open page which trigggered a local update, let's update the editor accordingly
-          this.space.getPageMeta(meta.name.slice(0, -3));
+        if (direction === "secondary->primary") {
+          // We likely polled the currently open page or attachment which trigggered a local update, let's update the editor accordingly
+          this.space.spacePrimitives.getFileMeta(meta.name);
         }
       },
     );
