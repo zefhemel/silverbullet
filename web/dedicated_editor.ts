@@ -83,6 +83,12 @@ export class DedicatedEditor {
     });
   }
 
+  focus() {
+    this.sendMessage({
+      type: "focus",
+    });
+  }
+
   private messageHandler(event: any) {
     if (event.source !== this.iframe.contentWindow) return;
     const data = event.data;

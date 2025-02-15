@@ -1080,7 +1080,7 @@ export class Client implements ConfigContainer {
     }
 
     if (this.isDedicatedEditor()) {
-      // TODO: Send focusing message to dedicated editor
+      this.dedicatedEditor.focus();
     } else {
       this.editorView.focus();
     }
