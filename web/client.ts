@@ -596,10 +596,19 @@ export class Client implements ConfigContainer {
 
     let lastSaveTimestamp: number | undefined;
 
-    // TODO: Fix this
-    this.eventHook.addLocalListener("editor:pageSaving", () => {
+    const updateLastSaveTimestamp = () => {
       lastSaveTimestamp = Date.now();
-    });
+    };
+
+    this.eventHook.addLocalListener(
+      "editor:pageSaving",
+      updateLastSaveTimestamp,
+    );
+
+    this.eventHook.addLocalListener(
+      "editor:attachmentSaving",
+      updateLastSaveTimestamp,
+    );
 
     this.eventHook.addLocalListener(
       "file:changed",
@@ -609,10 +618,9 @@ export class Client implements ConfigContainer {
         oldHash: number,
         newHash: number,
       ) => {
-        // Only reload when watching the current page (to avoid reloading when switching pages)
-        // TODO: Fix this not doing anything for attachments
+        // Only reload when watching the current page or attachment (to avoid reloading when switching pages)
         if (
-          this.space.watchInterval && `${this.currentPage}.md` === path &&
+          this.space.watchInterval && this.currentPath(true) === path &&
           // Avoid reloading if the page was just saved (5s window)
           (!lastSaveTimestamp || (lastSaveTimestamp < Date.now() - 5000))
         ) {
@@ -628,8 +636,10 @@ export class Client implements ConfigContainer {
             "now",
             Date.now(),
           );
-          this.flashNotification("Page changed elsewhere, reloading");
-          this.reloadPage();
+          this.flashNotification(
+            "Page or attachment changed elsewhere, reloading",
+          );
+          this.reloadEditor();
         }
       },
     );
@@ -1037,10 +1047,21 @@ export class Client implements ConfigContainer {
     >;
   }
 
+  async reloadEditor() {
+    if (this.isDedicatedEditor()) await this.reloadDedicatedEditor();
+    else await this.reloadPage();
+  }
+
   async reloadPage() {
     console.log("Reloading page");
     clearTimeout(this.saveTimeout);
     await this.loadPage(this.currentPage);
+  }
+
+  async reloadDedicatedEditor() {
+    console.log("Reloading dediacted editor");
+    clearTimeout(this.saveTimeout);
+    await this.loadDedicatedEditor(this.currentPage);
   }
 
   // Focus the editor
@@ -1116,12 +1137,15 @@ export class Client implements ConfigContainer {
 
   async loadDedicatedEditor(path: string) {
     const previousPath = this.currentPath();
+    const previousRef = this.ui.viewState.current;
 
     // TODO: Check if correct editor is already loaded and if so use this one
+    if (previousPath) {
+      this.space.unwatchFile(previousPath);
 
-    console.log(previousPath, path);
-    if (previousPath !== path) {
-      this.save(true);
+      if (previousPath !== path) {
+        this.save(true);
+      }
     }
 
     let doc;
@@ -1144,23 +1168,31 @@ export class Client implements ConfigContainer {
           "error",
         );
 
-        // TODO: Revert back to the last page
-        console.warn("Revert back to old page");
+        if (previousPath && previousRef) {
+          this.ui.viewDispatch(
+            previousRef.kind === "page"
+              ? { type: "page-loaded", meta: previousRef.meta }
+              : { type: "dedicated-editor-loaded", meta: previousRef.meta },
+          );
+        }
+
         return;
       }
     }
 
     await this.switchToDedicatedEditor(doc.meta.extension);
 
+    if (!this.dedicatedEditor) {
+      // TODO: Throw some kind of error and revert back
+      return;
+    }
+
     this.ui.viewDispatch({
       type: "dedicated-editor-loaded",
       meta: doc.meta,
     });
 
-    if (!this.dedicatedEditor) {
-      // TODO: Throw some kind of error and revert back
-      return;
-    }
+    this.space.watchFile(path);
 
     this.eventHook.dispatchEvent("editor:attachmentLoaded", path, previousPath)
       .catch(
@@ -1180,15 +1212,14 @@ export class Client implements ConfigContainer {
   async loadPage(pageName: string) {
     const loadingDifferentPage = pageName !== this.currentPage;
     const editorView = this.editorView;
-    // TODO: Can now also be a previous dedicated editor
-    const previousPage = this.currentPage;
+    const previousPath = this.currentPath();
+    const previousRef = this.ui.viewState.current;
 
     // Persist current page state and nicely close page
-    if (previousPage) {
+    if (previousPath) {
       // this.openPages.saveState(previousPage);
-      // TODO: Is this important to me?
-      this.space.unwatchPage(previousPage);
-      if (this.currentPath() !== `${pageName}.md`) {
+      this.space.unwatchFile(previousPath);
+      if (previousPath !== `${pageName}.md`) {
         await this.save(true);
       }
     }
@@ -1232,15 +1263,15 @@ export class Client implements ConfigContainer {
           `Could not load page ${pageName}: ${e.message}`,
           "error",
         );
-        if (previousPage) {
-          // TODO: Old metadata is now scrabbled here
-          this.ui.viewDispatch({
-            type: "page-loading",
-            name: previousPage,
-          });
+        if (previousPath && previousRef) {
+          this.ui.viewDispatch(
+            previousRef.kind === "page"
+              ? { type: "page-loaded", meta: previousRef.meta }
+              : { type: "dedicated-editor-loaded", meta: previousRef.meta },
+          );
         }
 
-        return false;
+        return;
       }
     }
 
@@ -1301,7 +1332,11 @@ export class Client implements ConfigContainer {
     // Note: these events are dispatched asynchronously deliberately (not waiting for results)
     if (loadingDifferentPage) {
       // TODO: isSynced is not added here
-      this.eventHook.dispatchEvent("editor:pageLoaded", pageName, previousPage)
+      this.eventHook.dispatchEvent(
+        "editor:pageLoaded",
+        pageName,
+        previousPath.slice(0, -3),
+      )
         .catch(
           console.error,
         );

@@ -11,7 +11,7 @@ const pageWatchInterval = 5000;
 export class Space {
   // We do watch files in the background to detect changes
   // This set of pages should only ever contain 1 page
-  watchedPages = new Set<string>();
+  watchedFiles = new Set<string>();
   watchInterval?: number;
 
   // private initialPageListLoad = true;
@@ -22,9 +22,11 @@ export class Space {
     eventHook: EventHook,
   ) {
     eventHook.addLocalListener("page:deleted", (pageName: string) => {
-      if (this.watchedPages.has(pageName)) {
+      const fileName = `${pageName}.md`;
+
+      if (this.watchedFiles.has(fileName)) {
         // Stop watching deleted pages already
-        this.watchedPages.delete(pageName);
+        this.watchedFiles.delete(fileName);
       }
     });
     setTimeout(() => {
@@ -166,8 +168,8 @@ export class Space {
         if (this.saving) {
           return;
         }
-        for (const pageName of this.watchedPages) {
-          await this.getPageMeta(pageName);
+        for (const fileName of this.watchedFiles) {
+          await this.spacePrimitives.getFileMeta(fileName);
         }
       });
     }, pageWatchInterval);
@@ -180,11 +182,19 @@ export class Space {
   }
 
   watchPage(pageName: string) {
-    this.watchedPages.add(pageName);
+    this.watchedFiles.add(`${pageName}.md`);
   }
 
   unwatchPage(pageName: string) {
-    this.watchedPages.delete(pageName);
+    this.watchedFiles.delete(`${pageName}.md`);
+  }
+
+  watchFile(fileName: string) {
+    this.watchedFiles.add(fileName);
+  }
+
+  unwatchFile(fileName: string) {
+    this.watchedFiles.delete(fileName);
   }
 }
 
