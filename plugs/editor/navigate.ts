@@ -130,7 +130,7 @@ async function actionClickOrActionEnter(
     case "Hashtag": {
       const hashtag = extractHashtag(mdTree.children![0].text!);
       await editor.navigate(
-        { page: `${tagPrefix}${hashtag}`, pos: 0 },
+        { kind: "page", page: `${tagPrefix}${hashtag}`, pos: 0 },
         false,
         inNewWindow,
       );

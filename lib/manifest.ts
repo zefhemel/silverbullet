@@ -86,7 +86,9 @@ export type SilverBulletHooks =
   & CodeWidgetT
   & PanelWidgetT
   & EndpointHookT
-  & PlugNamespaceHookT;
+  & PlugNamespaceHookT
+  & DedicatedEditorT
+  & SyscallHookT;
 
 /** A plug manifest configures hooks, declares syntax extensions, and describes plug metadata.
  *
