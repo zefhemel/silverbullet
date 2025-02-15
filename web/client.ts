@@ -1061,7 +1061,7 @@ export class Client implements ConfigContainer {
   async reloadDedicatedEditor() {
     console.log("Reloading dediacted editor");
     clearTimeout(this.saveTimeout);
-    await this.loadDedicatedEditor(this.currentPage);
+    await this.loadDedicatedEditor(this.currentPath());
   }
 
   // Focus the editor
@@ -1138,6 +1138,10 @@ export class Client implements ConfigContainer {
   async loadDedicatedEditor(path: string) {
     const previousPath = this.currentPath();
     const previousRef = this.ui.viewState.current;
+    const loadingDifferentPath = (this.onLoadLocationRef.page !== previousPath)
+      ? (previousPath !== path)
+      // Always load as different page if page is loaded from scratch
+      : true;
 
     const revertPath = () => {
       if (previousPath && previousRef) {
@@ -1149,11 +1153,10 @@ export class Client implements ConfigContainer {
       }
     };
 
-    // TODO: Check if correct editor is already loaded and if so use this one
     if (previousPath) {
       this.space.unwatchFile(previousPath);
 
-      if (previousPath !== path) {
+      if (loadingDifferentPath) {
         this.save(true);
       }
     }
@@ -1184,19 +1187,25 @@ export class Client implements ConfigContainer {
       return;
     }
 
-    try {
-      await this.switchToDedicatedEditor(doc.meta.extension);
+    if (
+      loadingDifferentPath &&
+      !(this.isDedicatedEditor() &&
+        this.dedicatedEditor.extension === doc.meta.extension)
+    ) {
+      try {
+        await this.switchToDedicatedEditor(doc.meta.extension);
 
-      if (!this.dedicatedEditor) {
-        throw new Error("Problem setting up dedicated editor");
+        if (!this.dedicatedEditor) {
+          throw new Error("Problem setting up dedicated editor");
+        }
+      } catch (e: any) {
+        console.log(e.toString());
+
+        this.switchToPageEditor();
+        revertPath();
+        this.navigate({ kind: "page", page: "" });
+        return;
       }
-    } catch (e: any) {
-      console.log(e.toString());
-
-      this.switchToPageEditor();
-      revertPath();
-      this.navigate({ kind: "page", page: "" });
-      return;
     }
 
     this.ui.viewDispatch({
@@ -1204,21 +1213,33 @@ export class Client implements ConfigContainer {
       meta: doc.meta,
     });
 
-    this.space.watchFile(path);
+    if (!loadingDifferentPath && this.isDedicatedEditor()) {
+      // We are loading the same page again so just send a file changed event
+      this.dedicatedEditor.changeContent(doc.data, doc.meta);
+    } else {
+      this.dedicatedEditor!.setContent(doc.data, doc.meta);
+      this.space.watchFile(path);
+    }
 
-    this.eventHook.dispatchEvent("editor:attachmentLoaded", path, previousPath)
-      .catch(
-        console.error,
-      );
-
-    // TODO: There should be a reloaded event here
-    // } else {
-    //   this.eventHook.dispatchEvent("editor:pageReloaded", pageName).catch(
-    //     console.error,
-    //   );
-    // }
-
-    this.dedicatedEditor.setContent(doc.data, doc.meta);
+    if (loadingDifferentPath) {
+      this.eventHook.dispatchEvent(
+        "editor:attachmentLoaded",
+        path,
+        previousPath,
+      )
+        .catch(
+          console.error,
+        );
+    } else {
+      this.eventHook.dispatchEvent(
+        "editor:attachmentReloaded",
+        path,
+        previousPath,
+      )
+        .catch(
+          console.error,
+        );
+    }
   }
 
   async loadPage(pageName: string) {

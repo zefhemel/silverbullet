@@ -5,6 +5,7 @@ import { html as skeleton } from "./dedicated_editor_skeleton.ts";
 export class DedicatedEditor {
   iframe!: HTMLIFrameElement;
   name!: string;
+  extension!: string;
   currentPath: string | null = null;
 
   constructor(
@@ -14,10 +15,12 @@ export class DedicatedEditor {
   ) {}
 
   async init(client: Client, extension: string) {
+    this.extension = extension;
+
     const entry = Array.from(
       client.clientSystem.dedicatedEditorHook.dedicatedEditors
         .entries(),
-    ).find(([_, { extensions }]) => extensions.includes(extension));
+    ).find(([_, { extensions }]) => extensions.includes(this.extension));
 
     if (!entry) {
       // TODO: Can we reallly throw here?
@@ -65,6 +68,14 @@ export class DedicatedEditor {
     });
 
     this.currentPath = meta.name;
+  }
+
+  changeContent(data: Uint8Array, meta: AttachmentMeta) {
+    this.sendMessage({
+      type: "file-changed",
+      data,
+      meta,
+    });
   }
 
   requestSave() {
