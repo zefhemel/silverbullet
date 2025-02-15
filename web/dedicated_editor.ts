@@ -23,7 +23,6 @@ export class DedicatedEditor {
     ).find(([_, { extensions }]) => extensions.includes(this.extension));
 
     if (!entry) {
-      // TODO: Can we reallly throw here?
       throw new Error("Couldn't find plug for specified extension");
     }
 

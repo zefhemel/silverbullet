@@ -109,8 +109,9 @@ self.addEventListener("fetch", (event: any) => {
       ) {
         return fetch(request);
       } else if (
-        looksLikePathWithExtension(pathname) &&
-        !request.headers.get("accept").includes("text/html")
+        (looksLikePathWithExtension(pathname) &&
+          !request.headers.get("accept").includes("text/html")) ||
+        requestUrl.searchParams.get("raw") === "true"
       ) {
         // If this is a /*.* request, this can either be a plug worker load or an attachment load
         return handleLocalFileRequest(request, pathname);

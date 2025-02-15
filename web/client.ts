@@ -1093,7 +1093,6 @@ export class Client implements ConfigContainer {
     replaceState = false,
     newWindow = false,
   ) {
-    // TODO: We really be using typescript and using empty string for specific cases
     if (!locationRef.page) {
       locationRef.kind = "page";
       locationRef.page = cleanPageRef(
@@ -1138,7 +1137,8 @@ export class Client implements ConfigContainer {
   async loadDedicatedEditor(path: string) {
     const previousPath = this.currentPath();
     const previousRef = this.ui.viewState.current;
-    const loadingDifferentPath = (this.onLoadLocationRef.page !== previousPath)
+    const initalLoad = !previousRef;
+    const loadingDifferentPath = !initalLoad
       ? (previousPath !== path)
       // Always load as different page if page is loaded from scratch
       : true;
@@ -1176,7 +1176,7 @@ export class Client implements ConfigContainer {
       if (e.message.includes("Not found")) {
         console.log("This page doesn't exist, redirecting to the index page");
 
-        this.navigate({ kind: "page", page: "" });
+        if (initalLoad) this.navigate({ kind: "page", page: "" });
       } else {
         this.flashNotification(
           `Could not load dedicated editor ${path}: ${e.message}`,
@@ -1199,11 +1199,22 @@ export class Client implements ConfigContainer {
           throw new Error("Problem setting up dedicated editor");
         }
       } catch (e: any) {
-        console.log(e.toString());
+        console.log(e.message);
 
-        this.switchToPageEditor();
         revertPath();
-        this.navigate({ kind: "page", page: "" });
+        // TODO
+        this.switchToPageEditor();
+
+        if (e.message.includes("Couldn't find")) {
+          editor.openUrl(path + "?raw=true", initalLoad);
+
+          // This is a hacky way to clean up the history here
+          globalThis.history.replaceState(
+            previousRef,
+            "",
+            `/${encodePageURI(previousPath)}`,
+          );
+        }
         return;
       }
     }

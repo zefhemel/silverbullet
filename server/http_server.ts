@@ -162,7 +162,6 @@ export class HttpServer {
     this.app.use("*", (c) => {
       const url = new URL(c.req.url);
       const pageName = decodePageURI(url.pathname.slice(1));
-      console.log("Good guess", pageName);
       return this.renderHtmlPage(this.spaceServer, pageName, c);
     });
 
@@ -600,7 +599,10 @@ export class HttpServer {
         return c.redirect(`/${name.slice(0, -mdExt.length)}`);
       }
       // This is a good guess that the request comes directly from a user
-      if (req.header("Accept")?.includes("text/html")) {
+      if (
+        req.header("Accept")?.includes("text/html") &&
+        req.query("raw") !== "true"
+      ) {
         return next();
       }
 
