@@ -256,7 +256,6 @@ export class Client implements ConfigContainer {
 
     // Regularly sync the currently open file
     setInterval(() => {
-      // TODO: Implement syncing for attachments
       try {
         this.syncService.syncFile(this.currentPath(true)).catch((e: any) => {
           console.error("Interval sync error", e);
@@ -1202,7 +1201,7 @@ export class Client implements ConfigContainer {
         console.log(e.message);
 
         revertPath();
-        // TODO
+        // TODO: We won't always revert to a page editor
         this.switchToPageEditor();
 
         if (e.message.includes("Couldn't find")) {
@@ -1375,7 +1374,6 @@ export class Client implements ConfigContainer {
 
     // Note: these events are dispatched asynchronously deliberately (not waiting for results)
     if (loadingDifferentPage) {
-      // TODO: isSynced is not added here
       this.eventHook.dispatchEvent(
         "editor:pageLoaded",
         pageName,
@@ -1436,7 +1434,6 @@ export class Client implements ConfigContainer {
             // Also need to keep track of this for attachments
             this.ui.viewDispatch({ type: "dedicated-editor-saved" });
 
-            // TODO: Also create a corresponding event here
             await this.dispatchAppEvent(
               "editor:attachmentSaved",
               path,
