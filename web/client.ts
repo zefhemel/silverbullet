@@ -1139,6 +1139,16 @@ export class Client implements ConfigContainer {
     const previousPath = this.currentPath();
     const previousRef = this.ui.viewState.current;
 
+    const revertPath = () => {
+      if (previousPath && previousRef) {
+        this.ui.viewDispatch(
+          previousRef.kind === "page"
+            ? { type: "page-loaded", meta: previousRef.meta }
+            : { type: "dedicated-editor-loaded", meta: previousRef.meta },
+        );
+      }
+    };
+
     // TODO: Check if correct editor is already loaded and if so use this one
     if (previousPath) {
       this.space.unwatchFile(previousPath);
@@ -1158,32 +1168,34 @@ export class Client implements ConfigContainer {
     try {
       doc = await this.space.readAttachment(path);
     } catch (e: any) {
+      revertPath();
+
       if (e.message.includes("Not found")) {
-        // TODO: load index page somehow
-        console.warn("TODO: Load index page");
-        return;
+        console.log("This page doesn't exist, redirecting to the index page");
+
+        this.navigate({ kind: "page", page: "" });
       } else {
         this.flashNotification(
           `Could not load dedicated editor ${path}: ${e.message}`,
           "error",
         );
-
-        if (previousPath && previousRef) {
-          this.ui.viewDispatch(
-            previousRef.kind === "page"
-              ? { type: "page-loaded", meta: previousRef.meta }
-              : { type: "dedicated-editor-loaded", meta: previousRef.meta },
-          );
-        }
-
-        return;
       }
+
+      return;
     }
 
-    await this.switchToDedicatedEditor(doc.meta.extension);
+    try {
+      await this.switchToDedicatedEditor(doc.meta.extension);
 
-    if (!this.dedicatedEditor) {
-      // TODO: Throw some kind of error and revert back
+      if (!this.dedicatedEditor) {
+        throw new Error("Problem setting up dedicated editor");
+      }
+    } catch (e: any) {
+      console.log(e.toString());
+
+      this.switchToPageEditor();
+      revertPath();
+      this.navigate({ kind: "page", page: "" });
       return;
     }
 

@@ -45,9 +45,12 @@ export class DedicatedEditor {
   }
 
   destroy() {
-    // TODO: Send closing event & Think about how to handle last save
-    globalThis.removeEventListener("message", this.messageHandler);
-    this.iframe.remove();
+    // If name isn't initalized the editor is probably dead
+    if (this.name) {
+      // TODO: Send closing event & Think about how to handle last save
+      globalThis.removeEventListener("message", this.messageHandler);
+      this.iframe.remove();
+    }
   }
 
   private sendMessage(message: { type: string } & any) {
