@@ -240,21 +240,30 @@ export class MainUI {
             client.editorView.scrollDOM.scrollTop = 0;
           }}
           onRename={async (newName) => {
-            // TODO: Make this work for attachments
-            if (!newName) {
-              // Always move cursor to the start of the page
-              client.editorView.dispatch({
-                selection: { anchor: 0 },
-              });
+            if (client.isDedicatedEditor()) {
+              if (!newName) return;
+
+              console.log("Now renaming attachment to...", newName);
+              await client.clientSystem.system.invokeFunction(
+                "index.renameAttachmentCommand",
+                [{ attachment: newName }],
+              );
+            } else {
+              if (!newName) {
+                // Always move cursor to the start of the page
+                client.editorView.dispatch({
+                  selection: { anchor: 0 },
+                });
+                client.focus();
+                return;
+              }
+              console.log("Now renaming page to...", newName);
+              await client.clientSystem.system.invokeFunction(
+                "index.renamePageCommand",
+                [{ page: newName }],
+              );
               client.focus();
-              return;
             }
-            console.log("Now renaming page to...", newName);
-            await client.clientSystem.system.invokeFunction(
-              "index.renamePageCommand",
-              [{ page: newName }],
-            );
-            client.focus();
           }}
           actionButtons={[
             // Sync button
