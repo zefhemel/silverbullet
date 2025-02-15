@@ -156,7 +156,6 @@ export function PageNavigator({
     completePrefix = currentPath.split(" ")[0] + " ";
   }
 
-  // TODO: Allow new doesn't seem to work
   const allowNew = mode !== "attachment";
   const creatablePageNoun = mode !== "all" ? mode : "page";
   const openablePageNoun = mode !== "all" ? mode : "page or attachment";
@@ -234,7 +233,7 @@ export function PageNavigator({
         }
         return options;
       }}
-      allowNew
+      allowNew={allowNew}
       helpText={`Press <code>Enter</code> to open the selected ${openablePageNoun}` + (allowNew ? `, or <code>Shift-Enter</code> to create a new ${creatablePageNoun} with this exact name.` : "")}
       newHint={`Create ${creatablePageNoun}`}
       completePrefix={completePrefix}
