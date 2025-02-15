@@ -71,7 +71,7 @@ export class DedicatedEditor {
 
   changeContent(data: Uint8Array, meta: AttachmentMeta) {
     this.sendMessage({
-      type: "file-changed",
+      type: "file-update",
       data,
       meta,
     });
@@ -95,7 +95,7 @@ export class DedicatedEditor {
     if (!data) return;
 
     switch (data.type) {
-      case "attachment-changed":
+      case "file-changed":
         {
           this.client.ui.viewDispatch({
             type: "dedicated-editor-changed",
@@ -103,19 +103,19 @@ export class DedicatedEditor {
           this.client.save().catch((e) => console.error("Couldn't save: ", e));
         }
         break;
-      case "attachment-saved":
+      case "file-saved":
         {
           if (!this.currentPath) return;
           this.saveMethod(this.currentPath, data.data);
         }
         break;
       default:
-        console.log("Currently no events handled here");
+        console.warn("Unknown event sent from plug: ", data.type);
     }
   }
 
   private createIframe(): [HTMLIFrameElement, Promise<void>] {
-    // TODO: Cache this Iframe
+    // Note: In the future we could maybe cache this iframe, for now it is not nearly necessary
     const iframe = document.createElement("iframe");
 
     iframe.src = "about:blank";
