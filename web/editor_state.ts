@@ -53,6 +53,7 @@ import { extendedMarkdownLanguage } from "$common/markdown_parser/parser.ts";
 import { parseCommand } from "$common/command.ts";
 import { safeRun } from "$lib/async.ts";
 import { codeCopyPlugin } from "./cm_plugins/code_copy.ts";
+import { disableSpellcheck } from "./cm_plugins/spell_checking.ts";
 
 export function createEditorState(
   client: Client,
@@ -159,11 +160,7 @@ export function createEditorState(
         { selector: "Blockquote", class: "sb-line-blockquote" },
         { selector: "Task", class: "sb-line-task" },
         { selector: "CodeBlock", class: "sb-line-code" },
-        {
-          selector: "FencedCode",
-          class: "sb-line-fenced-code",
-          disableSpellCheck: true,
-        },
+        { selector: "FencedCode", class: "sb-line-fenced-code" },
         { selector: "Comment", class: "sb-line-comment" },
         { selector: "BulletList", class: "sb-line-ul" },
         { selector: "OrderedList", class: "sb-line-ol" },
@@ -171,9 +168,9 @@ export function createEditorState(
         {
           selector: "FrontMatter",
           class: "sb-frontmatter",
-          disableSpellCheck: true,
         },
       ]),
+      disableSpellcheck(["InlineCode", "CodeText", "FrontMatter"]),
       keyBindings,
       EditorView.domEventHandlers({
         // This may result in duplicated touch events on mobile devices

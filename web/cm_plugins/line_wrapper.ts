@@ -7,7 +7,6 @@ interface WrapElement {
   selector: string;
   class: string;
   nesting?: boolean;
-  disableSpellCheck?: boolean;
 }
 
 export function lineWrapper(wrapElements: WrapElement[]) {
@@ -18,10 +17,6 @@ export function lineWrapper(wrapElements: WrapElement[]) {
     syntaxTree(state).iterate({
       enter: ({ type, from, to }) => {
         for (const wrapElement of wrapElements) {
-          const spellCheckAttributes = wrapElement.disableSpellCheck
-            ? { attributes: { spellcheck: "false" } }
-            : {};
-
           if (type.name == wrapElement.selector) {
             if (wrapElement.nesting) {
               elementStack.push(type.name);
@@ -36,7 +31,6 @@ export function lineWrapper(wrapElements: WrapElement[]) {
               widgets.push(
                 Decoration.line({
                   class: cls,
-                  ...spellCheckAttributes,
                 }).range(doc.lineAt(idx).from),
               );
               idx += line.length + 1;
