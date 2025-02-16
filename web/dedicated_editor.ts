@@ -42,7 +42,7 @@ export class DedicatedEditor {
       type: "internal_init",
       html: content.html,
       script: content.script,
-      // theme: document.getElementsByTagName("html")[0].dataset.theme,
+      theme: document.getElementsByTagName("html")[0].dataset.theme,
     });
   }
 

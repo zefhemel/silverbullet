@@ -30,13 +30,12 @@ export const html = `<!DOCTYPE html>
       }
 
       switch (data.type) {
-        // { type: "init", html: string, script: string }
+        // { type: "init", html: string, script: string, theme: string }
         case "internal_init": {
           document.body.innerHTML = data.html;
-          // TODO: Fix theming
-          // if (data.theme) {
-          //   document.getElementsByTagName("html")[0].setAttribute("data-theme", data.theme);
-          // }
+          if (data.theme) {
+            document.getElementsByTagName("html")[0].setAttribute("data-theme", data.theme);
+          }
 
           try {
             eval(data.script);
