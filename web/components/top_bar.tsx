@@ -131,7 +131,7 @@ export function TopBar({
                   </button>
                 );
 
-                return actionButton.href !== undefined
+                return actionButton.href
                   ? <a href={actionButton.href}>{button}</a>
                   : button;
               })}
