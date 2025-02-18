@@ -56,7 +56,8 @@ export class DedicatedEditor {
   }
 
   private sendMessage(message: { type: string } & any) {
-    this.iframe.contentWindow!.postMessage(message);
+    if (!this.iframe?.contentWindow) return;
+    this.iframe.contentWindow.postMessage(message);
   }
 
   setContent(data: Uint8Array, meta: AttachmentMeta) {
