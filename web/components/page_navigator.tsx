@@ -37,10 +37,12 @@ export function PageNavigator({
 
   if (mode === "attachment" || mode === "all") {
     for (const attachmentMeta of allAttachments) {
-      let orderId = -new Date(attachmentMeta.lastModified).getTime();
+      const isViewable = extensions.has(attachmentMeta.extension);
+
+      let orderId = isViewable ? -new Date(attachmentMeta.lastModified).getTime() : (Number.MAX_VALUE - new Date(attachmentMeta.lastModified).getTime());
 
       if (currentPath && currentPath === attachmentMeta.name) {
-        orderId = Infinity;
+        orderId = 0;
       }
 
       // Can't really at tags to attachments as of right now, but maybe in the future
@@ -49,8 +51,6 @@ export function PageNavigator({
         description = (description || "") +
         attachmentMeta.tags.map((tag) => `#${tag}`).join(" ");
       }
-
-      const isViewable = extensions.has(attachmentMeta.extension);
 
       if (!isViewable && client.clientSystem.readOnlyMode) continue;
 
