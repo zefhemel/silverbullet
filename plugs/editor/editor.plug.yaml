@@ -478,3 +478,10 @@ functions:
       hide: true
       contexts:
         - internal
+
+  deleteAttachment:
+    path: "./attachment.ts:deleteAttachment"
+    command:
+      name: "Attachment: Delete"
+      requireMode: rw
+      requireEditor: notpage
