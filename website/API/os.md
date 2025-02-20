@@ -35,6 +35,9 @@ Format specifiers:
 - `%A`: Full weekday name (e.g., "Sunday")
 - `%a`: Abbreviated weekday name (e.g., "Sun")
 - `%w`: Weekday (0-6, Sunday is 0)
+- `%U`: Week of the year, starting with the first Sunday as the first day of week 01 (00-53)
+- `%W`: Week of the year, starting with the first Monday as the first day of week 01 (00-53)
+- `%V`: ISO 8601 week of the year (01-53) (see [Wikipedia](https://en.wikipedia.org/wiki/ISO_week_date))
 - `%j`: Day of year (001-366)
 - `%Z`: Time zone name
 - `%z`: Time zone offset from UTC
