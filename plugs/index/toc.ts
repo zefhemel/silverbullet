@@ -15,6 +15,7 @@ type TocConfig = {
   // Don't show the TOC if there are more than this many headers
   maxHeaders?: number;
   header?: boolean;
+  headerText?: string;
 };
 
 export async function widget(
@@ -58,7 +59,7 @@ export async function widget(
     // Too many headers, not showing TOC
     return null;
   }
-  let headerText = "# Table of Contents\n";
+  let headerText = config.headerText ?? "# Table of Contents\n";
   if (config.header === false) {
     headerText = "";
   }

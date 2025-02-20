@@ -16,6 +16,7 @@ To have a ToC added to all pages with a larger (e.g. 3) number of headings, it i
 In the body of the `toc` code widget you can configure a few options:
 
 * `header`: by default a “Table of Contents” header is added to the ToC, set this to `false` to disable rendering this header
+* `headerText`: by default "# Table of Contents\n". Change it to change the rendering of this header
 * `minHeaders`: only renders a ToC if the number of headers in the current page exceeds this number, otherwise renders an empty widget
 * `maxHeaders`: only renders a ToC if the number of headers in the current page is below this number, otherwise renders an empty widget
 
