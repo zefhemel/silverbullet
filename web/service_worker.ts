@@ -109,6 +109,12 @@ self.addEventListener("fetch", (event: any) => {
       ) {
         return fetch(request);
       } else if (
+        pathname.endsWith(".md") &&
+        request.headers.get("accept") !== "application/octet-stream" &&
+        request.headers.get("sec-fetch-mode") !== "cors"
+      ) {
+        return Response.redirect(`${pathname.slice(0, -3)}`);
+      } else if (
         (looksLikePathWithExtension(pathname) &&
           !request.headers.get("accept").includes("text/html")) ||
         requestUrl.searchParams.get("raw") === "true"
