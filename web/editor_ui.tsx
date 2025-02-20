@@ -39,7 +39,6 @@ export class MainUI {
           return;
         }
         console.log("Delegated keydown", ev, "to editor");
-        client.focus();
         if (runScopeHandlers(client.editorView, ev, "editor")) {
           ev.preventDefault();
         }
@@ -154,6 +153,8 @@ export class MainUI {
                       client.focus();
                     }
                   });
+              } else {
+                setTimeout(() => client.focus());
               }
             }}
             commands={client.getCommandsByContext(viewState)}
