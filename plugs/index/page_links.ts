@@ -231,9 +231,9 @@ export async function indexLinks({ name, tree }: IndexTreeEvent) {
             asTemplate: false,
           };
           if (looksLikePathWithExtension(url)) {
-            link.toFile = resolvePath(name, url);
+            link.toFile = resolvePath(name, "/" + url);
           } else {
-            link.toPage = resolvePath(name, parsePageRef(url).page);
+            link.toPage = resolvePath(name, "/" + parsePageRef(url).page);
           }
           if (alias) {
             link.alias = alias;
