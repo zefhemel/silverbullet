@@ -11,7 +11,6 @@ export class DedicatedEditorHook implements Hook<DedicatedEditorT> {
 
   constructor() {}
 
-  // TODO: Make sure there are not two or more editors for the same extension
   collectAllDedicatedEditors(system: System<DedicatedEditorT>) {
     this.dedicatedEditors.clear();
     for (const plug of system.loadedPlugs.values()) {

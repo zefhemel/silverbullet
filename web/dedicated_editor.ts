@@ -1,12 +1,14 @@
 import type { AttachmentMeta } from "@silverbulletmd/silverbullet/types";
 import type { Client } from "./client.ts";
 import { html as skeleton } from "./dedicated_editor_skeleton.ts";
+import { timeout } from "$lib/async.ts";
 
 export class DedicatedEditor {
   iframe!: HTMLIFrameElement;
   name!: string;
   extension!: string;
   currentPath: string | null = null;
+  savePromise: PromiseWithResolvers<void> | null = null;
 
   constructor(
     readonly parent: HTMLElement,
@@ -46,13 +48,25 @@ export class DedicatedEditor {
     });
   }
 
-  destroy() {
+  async destroy() {
     // If name isn't initalized the editor is probably dead
-    if (this.name) {
-      // TODO: Send closing event & Think about how to handle last save
-      globalThis.removeEventListener("message", this.messageHandler);
-      this.iframe.remove();
+    if (!this.name) return;
+
+    if (this.savePromise) {
+      try {
+        await Promise.race([
+          this.savePromise.promise,
+          timeout(2500),
+        ]);
+      } catch {
+        console.log(
+          "Unable to save content of dedicated editor in 2.5s. Aborting save",
+        );
+      }
     }
+
+    globalThis.removeEventListener("message", this.messageHandler);
+    this.iframe.remove();
   }
 
   private sendMessage(message: { type: string } & any) {
@@ -79,6 +93,14 @@ export class DedicatedEditor {
   }
 
   requestSave() {
+    if (this.savePromise) {
+      console.log(
+        "Save was already requested from editor, trying again anyways",
+      );
+    } else {
+      this.savePromise = Promise.withResolvers();
+    }
+
     this.sendMessage({
       type: "request-save",
     });
@@ -106,6 +128,9 @@ export class DedicatedEditor {
         break;
       case "file-saved":
         {
+          this.savePromise?.resolve();
+          this.savePromise = null;
+
           if (!this.currentPath) return;
           this.saveMethod(this.currentPath, data.data);
         }

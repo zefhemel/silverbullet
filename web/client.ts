@@ -1406,6 +1406,7 @@ export class Client implements ConfigContainer {
   switchToPageEditor() {
     if (!this.isDedicatedEditor()) return;
 
+    // Deliberately not awaiting this function as destroying & last-save can be handled in the background
     this.dedicatedEditor.destroy();
     // @ts-ignore: This is there the hacked type-guard from isDedicatedEditor fails
     this.dedicatedEditor = null;
@@ -1417,6 +1418,7 @@ export class Client implements ConfigContainer {
 
   async switchToDedicatedEditor(extension: string) {
     if (this.dedicatedEditor) {
+      // Deliberately not awaiting this function as destroying & last-save can be handled in the background
       this.dedicatedEditor.destroy();
     }
 

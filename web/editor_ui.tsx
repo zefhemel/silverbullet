@@ -236,8 +236,9 @@ export class MainUI {
           progressPerc={viewState.progressPerc}
           completer={client.miniEditorComplete.bind(client)}
           onClick={() => {
-            // TODO: Some way for all editors to scroll to top
-            client.editorView.scrollDOM.scrollTop = 0;
+            if (!client.isDedicatedEditor()) {
+              client.editorView.scrollDOM.scrollTop = 0;
+            }
           }}
           onRename={async (newName) => {
             if (client.isDedicatedEditor()) {
