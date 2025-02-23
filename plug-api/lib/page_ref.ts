@@ -34,14 +34,18 @@ export function looksLikePathWithExtension(name: string): boolean {
  */
 export function validatePageName(name: string) {
   // Page can not be empty and not end with a file extension (e.g. "bla.md")
-  if (name === "") {
-    throw new Error("Page name can not be empty");
-  }
-  if (name.startsWith(".")) {
-    throw new Error("Page name cannot start with a '.'");
-  }
+  validatePath(name);
   if (looksLikePathWithExtension(name)) {
     throw new Error("Page name can not end with a file extension");
+  }
+}
+
+export function validatePath(path: string) {
+  if (path === "") {
+    throw new Error("Path can not be empty");
+  }
+  if (path.startsWith(".")) {
+    throw new Error("Path cannot start with a '.'");
   }
 }
 
