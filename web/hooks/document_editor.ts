@@ -27,6 +27,18 @@ export class DocumentEditorHook implements Hook<DocumentEditorT> {
           ? functionDef.editor
           : [functionDef.editor];
 
+        const conflict = Array.from(this.documentEditors.entries()).find((
+          [_, { extensions }],
+        ) => keys.some((key) => extensions.includes(key)));
+
+        if (conflict) {
+          console.log(
+            `Extension definition of document editor ${name}: [${keys}] conflicts with the one from ${
+              conflict[0]
+            }: [${conflict[1].extensions}]! Using the latter.`,
+          );
+        }
+
         this.documentEditors.set(
           name,
           { extensions: keys, callback: () => plug.invoke(name, []) },
