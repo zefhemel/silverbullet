@@ -39,7 +39,6 @@ export class MainUI {
           // In some cm element, let's back out
           return;
         }
-        console.log("Delegated keydown", ev, "to editor");
         client.focus();
         if (runScopeHandlers(client.editorView, ev, "editor")) {
           ev.preventDefault();
