@@ -52,6 +52,13 @@ export class DocumentEditor {
     // If name isn't initalized the editor is probably dead
     if (!this.name) return;
 
+    await this.waitForSave();
+
+    globalThis.removeEventListener("message", this.messageHandler);
+    this.iframe.remove();
+  }
+
+  private async waitForSave() {
     if (this.savePromise) {
       try {
         await Promise.race([
@@ -59,14 +66,14 @@ export class DocumentEditor {
           timeout(2500),
         ]);
       } catch {
+        this.savePromise.resolve();
+        this.savePromise = null;
+
         console.log(
           "Unable to save content of document editor in 2.5s. Aborting save",
         );
       }
     }
-
-    globalThis.removeEventListener("message", this.messageHandler);
-    this.iframe.remove();
   }
 
   private sendMessage(message: { type: string } & any) {
@@ -84,7 +91,9 @@ export class DocumentEditor {
     this.currentPath = meta.name;
   }
 
-  changeContent(data: Uint8Array, meta: DocumentMeta) {
+  async changeContent(data: Uint8Array, meta: DocumentMeta) {
+    await this.waitForSave();
+
     this.sendMessage({
       type: "file-update",
       data,
