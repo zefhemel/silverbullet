@@ -110,7 +110,7 @@ functions:
   openDocumentNavigator:
     path: editor.ts:openDocumentNavigator
     command:
-      name: "Navigate: All Documents Picker"
+      name: "Navigate: Document Picker"
       key: "Ctrl-o"
       mac: "Cmd-o"
 
