@@ -70,10 +70,10 @@ functions:
     path: "./command.ts:reindexSpace"
     env: server
 
-  indexAttachment:
-    path: "./attachment.ts:indexAttachment"
+  indexDocument:
+    path: "./document.ts:indexDocument"
     events:
-      - attachment:index
+      - document:index
 
   indexPage:
     path: page.ts:indexPage
@@ -194,10 +194,10 @@ functions:
       requireMode: rw
       requireEditor: page
 
-  renameAttachmentCommand:
-    path: "./refactor.ts:renameAttachmentCommand"
+  renameDocumentCommand:
+    path: "./refactor.ts:renameDocumentCommand"
     command:
-      name: "Attachment: Rename Attachment Page"
+      name: "Document: Rename Document"
       requireMode: rw
       requireEditor: notpage
 
@@ -362,7 +362,7 @@ config:
         pos:
           type: number
           readOnly: true
-    attachment:
+    document:
       type: object
       additionalProperties: true
       properties:
@@ -405,6 +405,9 @@ config:
           enum:
             - ro
             - rw
+        extension:
+          readOnly: true
+          type: string
     item:
       type: object
       additionalProperties: true

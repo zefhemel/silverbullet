@@ -1,8 +1,4 @@
-import type {
-  AttachmentMeta,
-  FileMeta,
-  PageMeta,
-} from "../../plug-api/types.ts";
+import type { DocumentMeta, FileMeta, PageMeta } from "../../plug-api/types.ts";
 import type { SysCallMapping } from "../../lib/plugos/system.ts";
 import type { Space } from "../../common/space.ts";
 
@@ -26,17 +22,17 @@ export function spaceReadSyscalls(
     "space.listPlugs": (): Promise<FileMeta[]> => {
       return space.listPlugs();
     },
-    "space.listAttachments": async (): Promise<AttachmentMeta[]> => {
-      return await space.fetchAttachmentList();
+    "space.listDocuments": async (): Promise<DocumentMeta[]> => {
+      return await space.fetchDocumentList();
     },
-    "space.readAttachment": async (_ctx, name: string): Promise<Uint8Array> => {
-      return (await space.readAttachment(name)).data;
+    "space.readDocument": async (_ctx, name: string): Promise<Uint8Array> => {
+      return (await space.readDocument(name)).data;
     },
-    "space.getAttachmentMeta": async (
+    "space.getDocumentMeta": async (
       _ctx,
       name: string,
-    ): Promise<AttachmentMeta> => {
-      return await space.getAttachmentMeta(name);
+    ): Promise<DocumentMeta> => {
+      return await space.getDocumentMeta(name);
     },
 
     // FS
@@ -67,15 +63,15 @@ export function spaceWriteSyscalls(space: Space): SysCallMapping {
     "space.deletePage": async (_ctx, name: string) => {
       await space.deletePage(name);
     },
-    "space.writeAttachment": (
+    "space.writeDocument": (
       _ctx,
       name: string,
       data: Uint8Array,
-    ): Promise<AttachmentMeta> => {
-      return space.writeAttachment(name, data);
+    ): Promise<DocumentMeta> => {
+      return space.writeDocument(name, data);
     },
-    "space.deleteAttachment": async (_ctx, name: string) => {
-      await space.deleteAttachment(name);
+    "space.deleteDocument": async (_ctx, name: string) => {
+      await space.deleteDocument(name);
     },
     "space.writeFile": (
       _ctx,

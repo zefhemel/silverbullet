@@ -1,5 +1,5 @@
 import {
-  type AttachmentRef,
+  type DocumentRef,
   encodePageURI,
   type LocationRef,
   type PageRef,
@@ -18,7 +18,7 @@ export type LocationState =
       head?: number;
     };
   }
-  | AttachmentRef;
+  | DocumentRef;
 
 export class PathPageNavigator {
   navigationResolve?: () => void;

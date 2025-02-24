@@ -1,9 +1,9 @@
-import type { AttachmentMeta } from "@silverbulletmd/silverbullet/types";
+import type { DocumentMeta } from "@silverbulletmd/silverbullet/types";
 import type { Client } from "./client.ts";
-import { html as skeleton } from "./dedicated_editor_skeleton.ts";
+import { html as skeleton } from "./document_editor_skeleton.ts";
 import { timeout } from "$lib/async.ts";
 
-export class DedicatedEditor {
+export class DocumentEditor {
   iframe!: HTMLIFrameElement;
   name!: string;
   extension!: string;
@@ -20,7 +20,7 @@ export class DedicatedEditor {
     this.extension = extension;
 
     const entry = Array.from(
-      client.clientSystem.dedicatedEditorHook.dedicatedEditors
+      client.clientSystem.documentEditorHook.documentEditors
         .entries(),
     ).find(([_, { extensions }]) => extensions.includes(this.extension));
 
@@ -60,7 +60,7 @@ export class DedicatedEditor {
         ]);
       } catch {
         console.log(
-          "Unable to save content of dedicated editor in 2.5s. Aborting save",
+          "Unable to save content of document editor in 2.5s. Aborting save",
         );
       }
     }
@@ -74,7 +74,7 @@ export class DedicatedEditor {
     this.iframe.contentWindow.postMessage(message);
   }
 
-  setContent(data: Uint8Array, meta: AttachmentMeta) {
+  setContent(data: Uint8Array, meta: DocumentMeta) {
     this.sendMessage({
       type: "file-open",
       data,
@@ -84,7 +84,7 @@ export class DedicatedEditor {
     this.currentPath = meta.name;
   }
 
-  changeContent(data: Uint8Array, meta: AttachmentMeta) {
+  changeContent(data: Uint8Array, meta: DocumentMeta) {
     this.sendMessage({
       type: "file-update",
       data,
@@ -121,7 +121,7 @@ export class DedicatedEditor {
       case "file-changed":
         {
           this.client.ui.viewDispatch({
-            type: "dedicated-editor-changed",
+            type: "document-editor-changed",
           });
           this.client.save().catch((e) => console.error("Couldn't save: ", e));
         }

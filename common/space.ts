@@ -1,7 +1,7 @@
 import type { SpacePrimitives } from "$common/spaces/space_primitives.ts";
 import { plugPrefix } from "$common/spaces/constants.ts";
 
-import type { AttachmentMeta, FileMeta, PageMeta } from "../plug-api/types.ts";
+import type { DocumentMeta, FileMeta, PageMeta } from "../plug-api/types.ts";
 import type { EventHook } from "./hooks/event.ts";
 import { safeRun } from "../lib/async.ts";
 import { localDateString } from "$lib/dates.ts";
@@ -100,11 +100,11 @@ export class Space {
       .map(fileMetaToPageMeta);
   }
 
-  async fetchAttachmentList(): Promise<AttachmentMeta[]> {
+  async fetchDocumentList(): Promise<DocumentMeta[]> {
     return (await this.deduplicatedFileList()).flatMap((fileMeta) =>
       !this.isListedPage(fileMeta) &&
         !fileMeta.name.endsWith(".plug.js")
-        ? [fileMetaToAttachmentMeta(fileMeta)]
+        ? [fileMetaToDocumentMeta(fileMeta)]
         : []
     );
   }
@@ -126,34 +126,34 @@ export class Space {
   }
 
   /**
-   * Reads an attachment
-   * @param name path of the attachment
+   * Reads a document
+   * @param name path of the document
    * @returns
    */
-  async readAttachment(
+  async readDocument(
     name: string,
-  ): Promise<{ data: Uint8Array; meta: AttachmentMeta }> {
+  ): Promise<{ data: Uint8Array; meta: DocumentMeta }> {
     const file = await this.spacePrimitives.readFile(name);
-    return { data: file.data, meta: fileMetaToAttachmentMeta(file.meta) };
+    return { data: file.data, meta: fileMetaToDocumentMeta(file.meta) };
   }
 
-  async getAttachmentMeta(name: string): Promise<AttachmentMeta> {
-    return fileMetaToAttachmentMeta(
+  async getDocumentMeta(name: string): Promise<DocumentMeta> {
+    return fileMetaToDocumentMeta(
       await this.spacePrimitives.getFileMeta(name),
     );
   }
 
-  async writeAttachment(
+  async writeDocument(
     name: string,
     data: Uint8Array,
     selfUpdate?: boolean,
-  ): Promise<AttachmentMeta> {
-    return fileMetaToAttachmentMeta(
+  ): Promise<DocumentMeta> {
+    return fileMetaToDocumentMeta(
       await this.spacePrimitives.writeFile(name, data, selfUpdate),
     );
   }
 
-  deleteAttachment(name: string): Promise<void> {
+  deleteDocument(name: string): Promise<void> {
     return this.spacePrimitives.deleteFile(name);
   }
 
@@ -215,20 +215,20 @@ export function fileMetaToPageMeta(fileMeta: FileMeta): PageMeta {
   }
 }
 
-export function fileMetaToAttachmentMeta(
+export function fileMetaToDocumentMeta(
   fileMeta: FileMeta,
-): AttachmentMeta {
+): DocumentMeta {
   try {
     return {
       ...fileMeta,
       ref: fileMeta.name,
-      tag: "attachment",
+      tag: "document",
       created: localDateString(new Date(fileMeta.created)),
       lastModified: localDateString(new Date(fileMeta.lastModified)),
       extension: fileMeta.name.split(".").pop()?.toLowerCase(),
-    } as AttachmentMeta;
+    } as DocumentMeta;
   } catch (e) {
-    console.error("Failed to convert fileMeta to attachmentMeta", fileMeta, e);
+    console.error("Failed to convert fileMeta to documentMeta", fileMeta, e);
     throw e;
   }
 }

@@ -2,7 +2,7 @@ import type { AppCommand } from "../lib/command.ts";
 import type { FilterOption, Notification, PanelMode } from "../type/client.ts";
 import { type Config, defaultConfig } from "../type/config.ts";
 import type {
-  AttachmentMeta,
+  DocumentMeta,
   PageMeta,
 } from "@silverbulletmd/silverbullet/types";
 
@@ -20,13 +20,13 @@ export type AppViewState = {
       path: string;
     }
     | {
-      kind: "attachment";
-      meta: AttachmentMeta;
+      kind: "document";
+      meta: DocumentMeta;
       path: string;
     };
 
   allPages: PageMeta[];
-  allAttachments: AttachmentMeta[];
+  allDocuments: DocumentMeta[];
 
   isLoading: boolean;
   isMobile: boolean;
@@ -51,7 +51,7 @@ export type AppViewState = {
   };
 
   // Page navigator mode
-  pageNavigatorMode: "page" | "meta" | "attachment" | "all";
+  pageNavigatorMode: "page" | "meta" | "document" | "all";
 
   // Filter box
   showFilterBox: boolean;
@@ -94,7 +94,7 @@ export const initialViewState: AppViewState = {
   },
   config: defaultConfig,
   allPages: [],
-  allAttachments: [],
+  allDocuments: [],
   commands: new Map(),
   recentCommands: new Map(),
   notifications: [],
@@ -114,16 +114,16 @@ export type Action =
   | { type: "page-loading"; name: string }
   | { type: "page-changed" }
   | { type: "page-saved" }
-  | { type: "dedicated-editor-loaded"; meta: AttachmentMeta }
-  | { type: "dedicated-editor-loading"; name: string }
-  | { type: "dedicated-editor-changed" }
-  | { type: "dedicated-editor-saved" }
+  | { type: "document-editor-loaded"; meta: DocumentMeta }
+  | { type: "document-editor-loading"; name: string }
+  | { type: "document-editor-changed" }
+  | { type: "document-editor-saved" }
   | { type: "sync-change"; syncSuccess: boolean }
   | { type: "update-current-page-meta"; meta: PageMeta }
   | { type: "update-page-list"; allPages: PageMeta[] }
-  | { type: "update-attachment-list"; allAttachments: AttachmentMeta[] }
+  | { type: "update-document-list"; allDocuments: DocumentMeta[] }
   | { type: "config-loaded"; config: Config }
-  | { type: "start-navigate"; mode: "page" | "meta" | "attachment" | "all" }
+  | { type: "start-navigate"; mode: "page" | "meta" | "document" | "all" }
   | { type: "stop-navigate" }
   | {
     type: "update-commands";

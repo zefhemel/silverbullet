@@ -4,7 +4,7 @@ import type {
   CompletionContext,
   CompletionResult,
 } from "@codemirror/autocomplete";
-import type { AttachmentMeta, PageMeta } from "@silverbulletmd/silverbullet/types";
+import type { DocumentMeta, PageMeta } from "@silverbulletmd/silverbullet/types";
 import { tagRegex as mdTagRegex } from "$common/markdown_parser/constants.ts";
 import { extractHashtag } from "@silverbulletmd/silverbullet/lib/tags";
 
@@ -12,7 +12,7 @@ const tagRegex = new RegExp(mdTagRegex.source, "g");
 
 export function PageNavigator({
   allPages,
-  allAttachments,
+  allDocuments,
   extensions,
   onNavigate,
   onModeSwitch,
@@ -22,51 +22,51 @@ export function PageNavigator({
   darkMode,
   currentPath,
 }: {
-  allAttachments: AttachmentMeta[];
+  allDocuments: DocumentMeta[];
   allPages: PageMeta[];
   extensions: Set<string>;
   vimMode: boolean;
   darkMode: boolean;
-  mode: "page" | "meta" | "attachment" | "all";
-  onNavigate: (page: string | undefined, type: "attachment" | "page") => void;
-  onModeSwitch: (mode: "page" | "meta" | "attachment" | "all") => void;
+  mode: "page" | "meta" | "document" | "all";
+  onNavigate: (page: string | undefined, type: "document" | "page") => void;
+  onModeSwitch: (mode: "page" | "meta" | "document" | "all") => void;
   completer: (context: CompletionContext) => Promise<CompletionResult | null>;
   currentPath?: string;
 }) {
   const options: FilterOption[] = [];
 
-  if (mode === "attachment" || mode === "all") {
-    for (const attachmentMeta of allAttachments) {
-      const isViewable = extensions.has(attachmentMeta.extension);
+  if (mode === "document" || mode === "all") {
+    for (const documentMeta of allDocuments) {
+      const isViewable = extensions.has(documentMeta.extension);
 
-      let orderId = isViewable ? -new Date(attachmentMeta.lastModified).getTime() : (Number.MAX_VALUE - new Date(attachmentMeta.lastModified).getTime());
+      let orderId = isViewable ? -new Date(documentMeta.lastModified).getTime() : (Number.MAX_VALUE - new Date(documentMeta.lastModified).getTime());
 
-      if (currentPath && currentPath === attachmentMeta.name) {
+      if (currentPath && currentPath === documentMeta.name) {
         orderId = 0;
       }
 
-      // Can't really at tags to attachments as of right now, but maybe in the future
+      // Can't really add tags to document as of right now, but maybe in the future
       let description: string | undefined;
-      if (attachmentMeta.tags) {
+      if (documentMeta.tags) {
         description = (description || "") +
-        attachmentMeta.tags.map((tag) => `#${tag}`).join(" ");
+        documentMeta.tags.map((tag) => `#${tag}`).join(" ");
       }
 
       if (!isViewable && client.clientSystem.readOnlyMode) continue;
 
       options.push({
-        type: "attachment",
-        ...attachmentMeta,
-        name: attachmentMeta.name,
+        type: "document",
+        ...documentMeta,
+        name: documentMeta.name,
         description,
         orderId: orderId,
-        hint: attachmentMeta.name.split(".").pop()?.toUpperCase(),
+        hint: documentMeta.name.split(".").pop()?.toUpperCase(),
         hintInactive: !isViewable,
       });
     }
   }
 
-  if (mode !== "attachment") {
+  if (mode !== "document") {
     for (const pageMeta of allPages) {
       // Sanitize the page name
       if (!pageMeta.name) {
@@ -156,9 +156,9 @@ export function PageNavigator({
     completePrefix = currentPath.split(" ")[0] + " ";
   }
 
-  const allowNew = mode !== "attachment";
+  const allowNew = mode !== "document";
   const creatablePageNoun = mode !== "all" ? mode : "page";
-  const openablePageNoun = mode !== "all" ? mode : "page or attachment";
+  const openablePageNoun = mode !== "all" ? mode : "page or document";
 
   return (
     <FilterList
@@ -166,9 +166,9 @@ export function PageNavigator({
         ? "Page"
         : (mode === "meta"
           ? "#template or #meta page"
-          : (mode === "attachment"
-            ? "Attachment"
-            : "Any page or Attachment, also hidden"))}
+          : (mode === "document"
+            ? "Document"
+            : "Any page or Document, also hidden"))}
       label="Open"
       options={options}
       vimMode={vimMode}
@@ -186,9 +186,9 @@ export function PageNavigator({
               onModeSwitch("meta");
               break;
             case "meta":
-              onModeSwitch("attachment");
+              onModeSwitch("document");
               break;
-            case "attachment":
+            case "document":
               onModeSwitch("all");
               break;
             case "all":

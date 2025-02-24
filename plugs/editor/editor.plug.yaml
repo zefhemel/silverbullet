@@ -107,10 +107,10 @@ functions:
       key: "Ctrl-Shift-k"
       mac: "Cmd-Shift-k"
 
-  openAttachmentNavigator:
-    path: editor.ts:openAttachmentNavigator
+  openDocumentNavigator:
+    path: editor.ts:openDocumentNavigator
     command:
-      name: "Navigate: All Attachments Picker"
+      name: "Navigate: All Documents Picker"
       key: "Ctrl-o"
       mac: "Cmd-o"
 
@@ -479,9 +479,9 @@ functions:
       contexts:
         - internal
 
-  deleteAttachment:
-    path: "./attachment.ts:deleteAttachment"
+  deleteDocument:
+    path: "./document.ts:deleteDocument"
     command:
-      name: "Attachment: Delete"
+      name: "Document: Delete"
       requireMode: rw
       requireEditor: notpage

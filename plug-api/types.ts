@@ -32,7 +32,7 @@ export type PageDecoration = {
   renderWidgets?: boolean; // Defaults to true
 };
 
-export type AttachmentMeta = ObjectValue<
+export type DocumentMeta = ObjectValue<
   {
     name: string;
     contentType: string;
@@ -177,10 +177,10 @@ export type CodeWidgetButton = {
   invokeFunction: string[];
 };
 
-// Dedicated editors stuff
-export type DedicatedEditorCallback = () => Promise<DedicatedEditorContent>;
+// Document editors stuff
+export type DocumentEditorCallback = () => Promise<DocumentEditorContent>;
 
-export type DedicatedEditorContent = {
+export type DocumentEditorContent = {
   html: string;
   script?: string;
 };
@@ -210,8 +210,8 @@ export type AppEvent =
   | "editor:pageReloaded"
   | "editor:pageSaving"
   | "editor:pageSaved"
-  | "editor:attachmentSaving"
-  | "editor:attachmentSaved"
+  | "editor:documentSaving"
+  | "editor:documentSaved"
   | "editor:modeswitch"
   | "plugs:loaded"
   | "editor:pageModified";

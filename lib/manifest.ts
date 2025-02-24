@@ -66,7 +66,7 @@ export type SyscallHookT = {
   syscall?: string;
 };
 
-export type DedicatedEditorT = {
+export type DocumentEditorT = {
   editor?: string | string[];
 };
 
@@ -87,7 +87,7 @@ export type SilverBulletHooks =
   & PanelWidgetT
   & EndpointHookT
   & PlugNamespaceHookT
-  & DedicatedEditorT
+  & DocumentEditorT
   & SyscallHookT;
 
 /** A plug manifest configures hooks, declares syntax extensions, and describes plug metadata.

@@ -126,7 +126,7 @@ export async function updatePlugsCommand() {
       const workerCode = manifests[0] as string;
       allCustomPlugNames.push(plugName);
       // console.log("Writing", `_plug/${plugName}.plug.js`, workerCode);
-      await space.writeAttachment(
+      await space.writeDocument(
         `_plug/${plugName}.plug.js`,
         new TextEncoder().encode(workerCode),
       );
@@ -140,7 +140,7 @@ export async function updatePlugsCommand() {
         existingPlug.length - ".plug.js".length,
       );
       if (!allPlugNames.includes(plugName)) {
-        await space.deleteAttachment(existingPlug);
+        await space.deleteDocument(existingPlug);
       }
     }
     await editor.flashNotification("And... done!");

@@ -7,17 +7,17 @@ export default function reducer(
 ): AppViewState {
   // console.log("Got action", action);
   switch (action.type) {
-    case "dedicated-editor-loading":
+    case "document-editor-loading":
       return {
         ...state,
         isLoading: false,
         current: {
-          kind: "attachment",
+          kind: "document",
           path: action.name,
-          // Do a best effor job of filling in the meta data, as the page is not loaded yet
+          // Do a best effort job of filling in the meta data, as the page is not loaded yet
           meta: {
             ref: action.name,
-            tag: "attachment",
+            tag: "document",
             name: action.name,
             contentType: "",
             created: "",
@@ -28,12 +28,12 @@ export default function reducer(
           },
         },
       };
-    case "dedicated-editor-loaded":
+    case "document-editor-loaded":
       return {
         ...state,
         isLoading: false,
         current: {
-          kind: "attachment",
+          kind: "document",
           path: action.meta.name,
           meta: action.meta,
         },
@@ -80,13 +80,13 @@ export default function reducer(
         },
       };
     }
-    case "dedicated-editor-changed":
+    case "document-editor-changed":
     case "page-changed":
       return {
         ...state,
         unsavedChanges: true,
       };
-    case "dedicated-editor-saved":
+    case "document-editor-saved":
     case "page-saved": {
       return {
         ...state,
@@ -142,10 +142,10 @@ export default function reducer(
       }
       return newState;
     }
-    case "update-attachment-list": {
+    case "update-document-list": {
       return {
         ...state,
-        allAttachments: action.allAttachments,
+        allDocuments: action.allDocuments,
       };
     }
     case "start-navigate": {

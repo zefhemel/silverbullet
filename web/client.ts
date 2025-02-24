@@ -22,8 +22,8 @@ import type { AppViewState } from "./type.ts";
 
 import type {
   AppEvent,
-  AttachmentMeta,
   CompleteEvent,
+  DocumentMeta,
   SlashCompletions,
 } from "../plug-api/types.ts";
 import type { StyleObject } from "../plugs/index/style.ts";
@@ -78,7 +78,7 @@ import { findNodeMatching } from "@silverbulletmd/silverbullet/lib/tree";
 import type { AspiringPageObject } from "../plugs/index/page_links.ts";
 import type { Config, ConfigContainer } from "../type/config.ts";
 import { diffAndPrepareChanges } from "./cm_util.ts";
-import { DedicatedEditor } from "./dedicated_editor.ts";
+import { DocumentEditor } from "./document_editor.ts";
 
 const frontMatterRegex = /^---\n(([^\n]|\n)*?)---\n/;
 
@@ -122,8 +122,8 @@ export class Client implements ConfigContainer {
   keyHandlerCompartment?: Compartment;
   indentUnitCompartment?: Compartment;
 
-  // Dedicated editors
-  dedicatedEditor: DedicatedEditor | null = null;
+  // Document editor
+  documentEditor: DocumentEditor | null = null;
 
   private pageNavigator!: PathPageNavigator;
 
@@ -268,7 +268,7 @@ export class Client implements ConfigContainer {
 
     // Let's update the local page list cache asynchronously
     this.updatePageListCache().catch(console.error);
-    this.updateAttachmentListCache().catch(console.error);
+    this.updateDocumentListCache().catch(console.error);
   }
 
   async loadConfig() {
@@ -351,7 +351,7 @@ export class Client implements ConfigContainer {
       "file:synced",
       (meta: FileMeta, direction: string) => {
         if (direction === "secondary->primary") {
-          // We likely polled the currently open page or attachment which trigggered a local update, let's update the editor accordingly
+          // We likely polled the currently open page or document which triggered a local update, let's update the editor accordingly
           this.space.spacePrimitives.getFileMeta(meta.name);
         }
       },
@@ -359,7 +359,7 @@ export class Client implements ConfigContainer {
   }
 
   private navigateWithinPage(pageState: LocationState) {
-    if (pageState.kind === "attachment") return;
+    if (pageState.kind === "document") return;
 
     // Did we end up doing anything in terms of internal navigation?
     let adjustedPosition = false;
@@ -489,7 +489,7 @@ export class Client implements ConfigContainer {
       if (locationState.kind === "page") {
         await this.loadPage(locationState.page);
       } else {
-        await this.loadDedicatedEditor(locationState.page);
+        await this.loadDocumentEditor(locationState.page);
       }
 
       // Setup scroll position, cursor position, etc
@@ -605,7 +605,7 @@ export class Client implements ConfigContainer {
     );
 
     this.eventHook.addLocalListener(
-      "editor:attachmentSaving",
+      "editor:documentSaving",
       updateLastSaveTimestamp,
     );
 
@@ -617,7 +617,7 @@ export class Client implements ConfigContainer {
         oldHash: number,
         newHash: number,
       ) => {
-        // Only reload when watching the current page or attachment (to avoid reloading when switching pages)
+        // Only reload when watching the current page or document (to avoid reloading when switching pages)
         if (
           this.space.watchInterval && this.currentPath(true) === path &&
           // Avoid reloading if the page was just saved (5s window)
@@ -636,7 +636,7 @@ export class Client implements ConfigContainer {
             Date.now(),
           );
           this.flashNotification(
-            "Page or attachment changed elsewhere, reloading",
+            "Page or document changed elsewhere, reloading",
           );
           this.reloadEditor();
         }
@@ -712,15 +712,15 @@ export class Client implements ConfigContainer {
             return resolve();
           }
 
-          if (this.isDedicatedEditor()) {
-            console.log("Requesting save for attachment", this.currentPath());
+          if (this.isDocumentEditor()) {
+            console.log("Requesting save for document", this.currentPath());
             this.dispatchAppEvent(
-              "editor:attachmentSaving",
+              "editor:documentSaving",
               this.currentPath(),
             );
 
             // Only thing we can really do is request a save
-            this.dedicatedEditor.requestSave();
+            this.documentEditor.requestSave();
 
             return resolve();
           } else {
@@ -736,7 +736,6 @@ export class Client implements ConfigContainer {
                 true,
               )
               .then(async (meta) => {
-                // Also need to keep track of this for attachments
                 this.ui.viewDispatch({ type: "page-saved" });
                 await this.dispatchAppEvent(
                   "editor:pageSaved",
@@ -799,13 +798,13 @@ export class Client implements ConfigContainer {
     );
   }
 
-  startPageNavigate(mode: "page" | "meta" | "attachment" | "all") {
+  startPageNavigate(mode: "page" | "meta" | "document" | "all") {
     // Then show the page navigator
     this.ui.viewDispatch({ type: "start-navigate", mode });
     // And update the page list cache asynchronously
     this.updatePageListCache().catch(console.error);
 
-    this.updateAttachmentListCache().catch(console.error);
+    this.updateDocumentListCache().catch(console.error);
   }
 
   async updatePageListCache() {
@@ -835,17 +834,17 @@ export class Client implements ConfigContainer {
     });
   }
 
-  async updateAttachmentListCache() {
-    console.log("Updating attachment list cache");
+  async updateDocumentListCache() {
+    console.log("Updating document list cache");
 
-    const allAttachments = await this.clientSystem.queryObjects<AttachmentMeta>(
-      "attachment",
+    const allDocuments = await this.clientSystem.queryObjects<DocumentMeta>(
+      "document",
       {},
     );
 
     this.ui.viewDispatch({
-      type: "update-attachment-list",
-      allAttachments: allAttachments,
+      type: "update-document-list",
+      allDocuments: allDocuments,
     });
   }
 
@@ -1047,7 +1046,7 @@ export class Client implements ConfigContainer {
   }
 
   async reloadEditor() {
-    if (this.isDedicatedEditor()) await this.reloadDedicatedEditor();
+    if (this.isDocumentEditor()) await this.reloadDocumentEditor();
     else await this.reloadPage();
   }
 
@@ -1057,10 +1056,10 @@ export class Client implements ConfigContainer {
     await this.loadPage(this.currentPage);
   }
 
-  async reloadDedicatedEditor() {
+  async reloadDocumentEditor() {
     console.log("Reloading dediacted editor");
     clearTimeout(this.saveTimeout);
-    await this.loadDedicatedEditor(this.currentPath());
+    await this.loadDocumentEditor(this.currentPath());
   }
 
   // Focus the editor
@@ -1080,8 +1079,8 @@ export class Client implements ConfigContainer {
       return;
     }
 
-    if (this.isDedicatedEditor()) {
-      this.dedicatedEditor.focus();
+    if (this.isDocumentEditor()) {
+      this.documentEditor.focus();
     } else {
       this.editorView.focus();
     }
@@ -1132,7 +1131,7 @@ export class Client implements ConfigContainer {
     this.focus();
   }
 
-  async loadDedicatedEditor(path: string) {
+  async loadDocumentEditor(path: string) {
     const previousPath = this.currentPath();
     const previousRef = this.ui.viewState.current;
     const initalLoad = !previousRef;
@@ -1146,7 +1145,7 @@ export class Client implements ConfigContainer {
         this.ui.viewDispatch(
           previousRef.kind === "page"
             ? { type: "page-loaded", meta: previousRef.meta }
-            : { type: "dedicated-editor-loaded", meta: previousRef.meta },
+            : { type: "document-editor-loaded", meta: previousRef.meta },
         );
       }
     };
@@ -1162,12 +1161,12 @@ export class Client implements ConfigContainer {
     let doc;
 
     this.ui.viewDispatch({
-      type: "dedicated-editor-loading",
+      type: "document-editor-loading",
       name: path,
     });
 
     try {
-      doc = await this.space.readAttachment(path);
+      doc = await this.space.readDocument(path);
     } catch (e: any) {
       revertPath();
 
@@ -1177,7 +1176,7 @@ export class Client implements ConfigContainer {
         if (initalLoad) this.navigate({ kind: "page", page: "" });
       } else {
         this.flashNotification(
-          `Could not load dedicated editor ${path}: ${e.message}`,
+          `Could not load document editor ${path}: ${e.message}`,
           "error",
         );
       }
@@ -1187,14 +1186,14 @@ export class Client implements ConfigContainer {
 
     if (
       loadingDifferentPath &&
-      !(this.isDedicatedEditor() &&
-        this.dedicatedEditor.extension === doc.meta.extension)
+      !(this.isDocumentEditor() &&
+        this.documentEditor.extension === doc.meta.extension)
     ) {
       try {
-        await this.switchToDedicatedEditor(doc.meta.extension);
+        await this.switchToDocumentEditor(doc.meta.extension);
 
-        if (!this.dedicatedEditor) {
-          throw new Error("Problem setting up dedicated editor");
+        if (!this.documentEditor) {
+          throw new Error("Problem setting up document editor");
         }
       } catch (e: any) {
         console.log(e.message);
@@ -1217,7 +1216,7 @@ export class Client implements ConfigContainer {
           if (previousRef.kind === "page") {
             this.loadPage(previousRef.path);
           } else {
-            this.loadDedicatedEditor(previousRef.path);
+            this.loadDocumentEditor(previousRef.path);
           }
         } else {
           // Navigate to index page if there was no previous page
@@ -1229,21 +1228,21 @@ export class Client implements ConfigContainer {
     }
 
     this.ui.viewDispatch({
-      type: "dedicated-editor-loaded",
+      type: "document-editor-loaded",
       meta: doc.meta,
     });
 
-    if (!loadingDifferentPath && this.isDedicatedEditor()) {
+    if (!loadingDifferentPath && this.isDocumentEditor()) {
       // We are loading the same page again so just send a file changed event
-      this.dedicatedEditor.changeContent(doc.data, doc.meta);
+      this.documentEditor.changeContent(doc.data, doc.meta);
     } else {
-      this.dedicatedEditor!.setContent(doc.data, doc.meta);
+      this.documentEditor!.setContent(doc.data, doc.meta);
       this.space.watchFile(path);
     }
 
     if (loadingDifferentPath) {
       this.eventHook.dispatchEvent(
-        "editor:attachmentLoaded",
+        "editor:documentLoaded",
         path,
         previousPath,
       )
@@ -1252,7 +1251,7 @@ export class Client implements ConfigContainer {
         );
     } else {
       this.eventHook.dispatchEvent(
-        "editor:attachmentReloaded",
+        "editor:documentReloaded",
         path,
         previousPath,
       )
@@ -1320,7 +1319,7 @@ export class Client implements ConfigContainer {
           this.ui.viewDispatch(
             previousRef.kind === "page"
               ? { type: "page-loaded", meta: previousRef.meta }
-              : { type: "dedicated-editor-loaded", meta: previousRef.meta },
+              : { type: "document-editor-loaded", meta: previousRef.meta },
           );
         }
 
@@ -1328,7 +1327,7 @@ export class Client implements ConfigContainer {
       }
     }
 
-    if (this.isDedicatedEditor()) {
+    if (this.isDocumentEditor()) {
       this.switchToPageEditor();
     }
 
@@ -1410,51 +1409,50 @@ export class Client implements ConfigContainer {
     );
   }
 
-  isDedicatedEditor(): this is { dedicatedEditor: DedicatedEditor } & this {
-    return this.dedicatedEditor !== null;
+  isDocumentEditor(): this is { documentEditor: DocumentEditor } & this {
+    return this.documentEditor !== null;
   }
 
   switchToPageEditor() {
-    if (!this.isDedicatedEditor()) return;
+    if (!this.isDocumentEditor()) return;
 
     // Deliberately not awaiting this function as destroying & last-save can be handled in the background
-    this.dedicatedEditor.destroy();
-    // @ts-ignore: This is there the hacked type-guard from isDedicatedEditor fails
-    this.dedicatedEditor = null;
+    this.documentEditor.destroy();
+    // @ts-ignore: This is there the hacked type-guard from isDocumentEditor fails
+    this.documentEditor = null;
 
     this.rebuildEditorState();
 
     document.getElementById("sb-editor")!.classList.remove("hide-cm");
   }
 
-  async switchToDedicatedEditor(extension: string) {
-    if (this.dedicatedEditor) {
+  async switchToDocumentEditor(extension: string) {
+    if (this.documentEditor) {
       // Deliberately not awaiting this function as destroying & last-save can be handled in the background
-      this.dedicatedEditor.destroy();
+      this.documentEditor.destroy();
     }
 
     // This is probably not the best way to hide the codemirror editor, but it works
     document.getElementById("sb-editor")!.classList.add("hide-cm");
 
-    this.dedicatedEditor = new DedicatedEditor(
+    this.documentEditor = new DocumentEditor(
       document.getElementById("sb-editor")!,
       this,
       (path, content) => {
         this.space
-          .writeAttachment(path, content, true)
+          .writeDocument(path, content, true)
           .then(async (meta) => {
-            // Also need to keep track of this for attachments
-            this.ui.viewDispatch({ type: "dedicated-editor-saved" });
+            this.ui.viewDispatch({ type: "document-editor-saved" });
 
             await this.dispatchAppEvent(
-              "editor:attachmentSaved",
+              "editor:documentSaved",
               path,
               meta,
             );
           })
           .catch(() => {
             this.flashNotification(
-              "Could not save attachment, retrying again in 10 seconds",
+              "Could not save document, retrying again in 10 seconds",
               "error",
             );
             this.saveTimeout = setTimeout(this.save.bind(this), 10000);
@@ -1462,7 +1460,7 @@ export class Client implements ConfigContainer {
       },
     );
 
-    await this.dedicatedEditor.init(this, extension);
+    await this.documentEditor.init(this, extension);
 
     // We have to rebuild the editor state here to update the keymap correctly
     // This is a little hacky but any other solution would pose a larger rewrite
@@ -1530,7 +1528,7 @@ export class Client implements ConfigContainer {
   getCommandsByContext(
     state: AppViewState,
   ): Map<string, AppCommand> {
-    const currentEditor = client.dedicatedEditor?.name;
+    const currentEditor = client.documentEditor?.name;
     const commands = new Map(state.commands);
     for (const [k, v] of state.commands.entries()) {
       if (

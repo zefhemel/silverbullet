@@ -11,15 +11,15 @@ export type PageRef = {
 };
 
 /**
- * Represents a reference to an attachment, with optional position, anchor and header.
+ * Represents a reference to an document, with optional position, anchor and header.
  */
-export type AttachmentRef = {
-  kind: "attachment";
+export type DocumentRef = {
+  kind: "document";
   // This isn't really referring to a page, but this saves us from a lot of name changing
   page: string;
 };
 
-export type LocationRef = PageRef | AttachmentRef;
+export type LocationRef = PageRef | DocumentRef;
 
 /**
  * Checks if a name looks like a full path (with a file extension), is not a conflicted file and not a search page.
@@ -98,13 +98,13 @@ export function parsePageRef(name: string): PageRef {
   return pageRef;
 }
 
-export function parseAttachmentRef(name: string): AttachmentRef {
-  return { kind: "attachment", page: name };
+export function parseDocumentRef(name: string): DocumentRef {
+  return { kind: "document", page: name };
 }
 
 export function parseLocationRef(name: string): LocationRef {
   return looksLikePathWithExtension(name)
-    ? parseAttachmentRef(name)
+    ? parseDocumentRef(name)
     : parsePageRef(name);
 }
 
@@ -134,14 +134,14 @@ export function encodePageRef(pageRef: PageRef): string {
   return name;
 }
 
-export function encodeAttachmentRef(attachmentRef: AttachmentRef): string {
-  return attachmentRef.page;
+export function encodeDocumentRef(documentRef: DocumentRef): string {
+  return documentRef.page;
 }
 
 export function encodeLocationRef(locationRef: LocationRef): string {
   return locationRef.kind === "page"
     ? encodePageRef(locationRef)
-    : encodeAttachmentRef(locationRef);
+    : encodeDocumentRef(locationRef);
 }
 
 /**

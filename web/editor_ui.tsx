@@ -113,9 +113,9 @@ export class MainUI {
       <>
         {viewState.showPageNavigator && (
           <PageNavigator
-            allAttachments={viewState.allAttachments}
+            allDocuments={viewState.allDocuments}
             allPages={viewState.allPages}
-            extensions={new Set(Array.from(client.clientSystem.dedicatedEditorHook.dedicatedEditors.values()).flatMap(({ extensions }) => extensions))}
+            extensions={new Set(Array.from(client.clientSystem.documentEditorHook.documentEditors.values()).flatMap(({ extensions }) => extensions))}
             currentPath={client.currentPath()}
             mode={viewState.pageNavigatorMode}
             completer={client.miniEditorComplete.bind(client)}
@@ -135,23 +135,23 @@ export class MainUI {
               if (!name) return;
 
               safeRun(async () => {
-                const attachmentMeta = viewState.allAttachments.find((attachment) => attachment.name === name);
+                const documentMeta = viewState.allDocuments.find((document) => document.name === name);
 
-                if (type === "attachment" && !Array.from(client.clientSystem.dedicatedEditorHook.dedicatedEditors.values()).some(({extensions}) => extensions.includes(attachmentMeta!.extension))) {
+                if (type === "document" && !Array.from(client.clientSystem.documentEditorHook.documentEditors.values()).some(({extensions}) => extensions.includes(documentMeta!.extension))) {
                   const options: string[] = ["Delete", "Rename"]
 
-                  const option = await client.filterBox("Modify", options.map(x => ({name: x} as FilterOption)), "There is no editor for this file type. Modify the selected attachment");
+                  const option = await client.filterBox("Modify", options.map(x => ({name: x} as FilterOption)), "There is no editor for this file type. Modify the selected document");
                   if (!option) return;
 
                   switch (option.name) {
                     case "Delete": {
-                      client.space.deleteAttachment(name)
+                      client.space.deleteDocument(name)
                       return;
                     }
                     case "Rename": {
                       await client.clientSystem.system.invokeFunction(
-                        "index.renameAttachmentCommand",
-                        [{ oldAttachment: name }],
+                        "index.renameDocumentCommand",
+                        [{ oldDocument: name }],
                       );
                       return;
                     }
@@ -236,18 +236,18 @@ export class MainUI {
           progressPerc={viewState.progressPerc}
           completer={client.miniEditorComplete.bind(client)}
           onClick={() => {
-            if (!client.isDedicatedEditor()) {
+            if (!client.isDocumentEditor()) {
               client.editorView.scrollDOM.scrollTop = 0;
             }
           }}
           onRename={async (newName) => {
-            if (client.isDedicatedEditor()) {
+            if (client.isDocumentEditor()) {
               if (!newName) return;
 
-              console.log("Now renaming attachment to...", newName);
+              console.log("Now renaming document to...", newName);
               await client.clientSystem.system.invokeFunction(
-                "index.renameAttachmentCommand",
-                [{ attachment: newName }],
+                "index.renameDocumentCommand",
+                [{ document: newName }],
               );
             } else {
               if (!newName) {

@@ -1,18 +1,18 @@
 import type { Hook, Manifest } from "$lib/plugos/types.ts";
-import type { DedicatedEditorT } from "$lib/manifest.ts";
-import type { DedicatedEditorCallback } from "@silverbulletmd/silverbullet/types";
+import type { DocumentEditorT } from "$lib/manifest.ts";
+import type { DocumentEditorCallback } from "@silverbulletmd/silverbullet/types";
 import type { System } from "$lib/plugos/system.ts";
 
-export class DedicatedEditorHook implements Hook<DedicatedEditorT> {
-  dedicatedEditors = new Map<
+export class DocumentEditorHook implements Hook<DocumentEditorT> {
+  documentEditors = new Map<
     string,
-    { extensions: string[]; callback: DedicatedEditorCallback }
+    { extensions: string[]; callback: DocumentEditorCallback }
   >();
 
   constructor() {}
 
-  collectAllDedicatedEditors(system: System<DedicatedEditorT>) {
-    this.dedicatedEditors.clear();
+  collectAllDocumentEditors(system: System<DocumentEditorT>) {
+    this.documentEditors.clear();
     for (const plug of system.loadedPlugs.values()) {
       for (
         const [name, functionDef] of Object.entries(
@@ -27,7 +27,7 @@ export class DedicatedEditorHook implements Hook<DedicatedEditorT> {
           ? functionDef.editor
           : [functionDef.editor];
 
-        this.dedicatedEditors.set(
+        this.documentEditors.set(
           name,
           { extensions: keys, callback: () => plug.invoke(name, []) },
         );
@@ -35,16 +35,16 @@ export class DedicatedEditorHook implements Hook<DedicatedEditorT> {
     }
   }
 
-  apply(system: System<DedicatedEditorT>): void {
-    this.collectAllDedicatedEditors(system);
+  apply(system: System<DocumentEditorT>): void {
+    this.collectAllDocumentEditors(system);
     system.on({
       plugLoaded: () => {
-        this.collectAllDedicatedEditors(system);
+        this.collectAllDocumentEditors(system);
       },
     });
   }
 
-  validateManifest(manifest: Manifest<DedicatedEditorT>): string[] {
+  validateManifest(manifest: Manifest<DocumentEditorT>): string[] {
     const errors = [];
     for (const functionDef of Object.values(manifest.functions)) {
       if (!functionDef.editor) {
@@ -55,7 +55,7 @@ export class DedicatedEditorHook implements Hook<DedicatedEditorT> {
         !Array.isArray(functionDef.editor)
       ) {
         errors.push(
-          `Dedicated editors require a string name or an array of string names.`,
+          `Document editors require a string name or an array of string names.`,
         );
       }
     }

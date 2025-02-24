@@ -126,7 +126,7 @@ config:
     indexPage:
       type: string
       format: page-ref
-    maximumAttachmentSize:
+    maximumDocumentSize:
       type: number
       nullable: true
     objectDecorators:

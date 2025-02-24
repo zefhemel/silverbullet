@@ -49,7 +49,7 @@ Deno.test("Page utility functions", () => {
     pos: 1,
   });
   assertEquals(parseLocationRef("foo.pdf"), {
-    kind: "attachment",
+    kind: "document",
     page: "foo.pdf",
   });
 

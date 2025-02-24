@@ -26,7 +26,7 @@ export function getCurrentPageMeta(): Promise<PageMeta | undefined> {
 }
 
 /**
- * Returns the name of the page or attachment currently open in the editor.
+ * Returns the name of the page or document currently open in the editor.
  * @param extension If true returns page paths with the their `.md` extension
  * @returns the current page path
  */
@@ -109,7 +109,7 @@ export function navigate(
  * @param mode the mode to open the navigator in
  */
 export function openPageNavigator(
-  mode: "page" | "meta" | "attachment" | "all" = "page",
+  mode: "page" | "meta" | "document" | "all" = "page",
 ): Promise<void> {
   return syscall("editor.openPageNavigator", mode);
 }

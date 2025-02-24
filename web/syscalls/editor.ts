@@ -37,7 +37,7 @@ export function editorSyscalls(client: Client): SysCallMapping {
       return client.currentPath(extension);
     },
     "editor.getCurrentEditor": (): string => {
-      return client.dedicatedEditor?.name || "page";
+      return client.documentEditor?.name || "page";
     },
     "editor.getText": () => {
       return client.editorView.state.sliceDoc();
@@ -306,7 +306,7 @@ export function editorSyscalls(client: Client): SysCallMapping {
     },
     "editor.openPageNavigator": (
       _ctx,
-      mode: "page" | "meta" | "attachment" | "all" = "page",
+      mode: "page" | "meta" | "document" | "all" = "page",
     ) => {
       client.startPageNavigate(mode);
     },

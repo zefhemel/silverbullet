@@ -610,7 +610,7 @@ export class HttpServer {
         // Don't expose hidden files
         return c.notFound();
       }
-      // Handle federated links through a simple redirect, only used for attachments loads with service workers disabled
+      // Handle federated links through a simple redirect, only used for documents loads with service workers disabled
       if (name.startsWith("!")) {
         let url = name.slice(1);
         console.log("Handling this as a federated link", url);
@@ -702,7 +702,7 @@ export class HttpServer {
         await this.spaceServer.spacePrimitives.deleteFile(name);
         return c.text("OK");
       } catch (e: any) {
-        console.error("Error deleting attachment", e);
+        console.error("Error deleting document", e);
         return c.text(e.message, 500);
       }
     }).options();

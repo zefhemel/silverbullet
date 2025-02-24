@@ -1,2 +1,2 @@
-export const maximumAttachmentSize = 10; // MiB
+export const maximumDocumentSize = 10; // MiB
 export const defaultLinkStyle = "wikilink";

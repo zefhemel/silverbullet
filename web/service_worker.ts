@@ -119,7 +119,7 @@ self.addEventListener("fetch", (event: any) => {
           !request.headers.get("accept").includes("text/html")) ||
         requestUrl.searchParams.get("raw") === "true"
       ) {
-        // If this is a /*.* request, this can either be a plug worker load or an attachment load
+        // If this is a /*.* request, this can either be a plug worker load or an document load
         return handleLocalFileRequest(request, pathname);
       } else {
         // Must be a page URL, let's serve index.html which will handle it

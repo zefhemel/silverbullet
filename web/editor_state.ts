@@ -41,7 +41,7 @@ import { lineWrapper } from "./cm_plugins/line_wrapper.ts";
 import { createSmartQuoteKeyBindings } from "./cm_plugins/smart_quotes.ts";
 import type { ClickEvent } from "../plug-api/types.ts";
 import {
-  attachmentExtension,
+  documentExtension,
   pasteLinkExtension,
 } from "./cm_plugins/editor_paste.ts";
 import type { TextChange } from "./change.ts";
@@ -289,7 +289,7 @@ export function createEditorState(
         },
       ),
       pasteLinkExtension,
-      attachmentExtension(client),
+      documentExtension(client),
       closeBrackets(),
     ],
   });
@@ -335,7 +335,7 @@ export function createCommandKeyBindings(client: Client): KeyBinding[] {
 
   // Then add bindings for plug commands
   for (const def of client.clientSystem.commandHook.editorCommands.values()) {
-    const currentEditor = client.dedicatedEditor?.name;
+    const currentEditor = client.documentEditor?.name;
     const requiredEditor = def.command.requireEditor;
 
     if (def.command.key && isValidEditor(currentEditor, requiredEditor)) {
@@ -378,7 +378,7 @@ export function createCommandKeyBindings(client: Client): KeyBinding[] {
 }
 
 export function createKeyBindings(client: Client): Extension {
-  if (client.isDedicatedEditor()) {
+  if (client.isDocumentEditor()) {
     return keymap.of([
       ...createCommandKeyBindings(client),
     ]);

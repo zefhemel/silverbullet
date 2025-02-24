@@ -81,7 +81,7 @@ export class SyncService implements ISyncService {
       },
     );
 
-    eventHook.addLocalListener("editor:attachmentLoaded", (name, _prevPage) => {
+    eventHook.addLocalListener("editor:documentLoaded", (name, _prevPage) => {
       this.scheduleFileSync(name).catch(console.error);
     });
 
@@ -93,7 +93,7 @@ export class SyncService implements ISyncService {
 
     eventHook.addLocalListener("editor:pageSaving", setSavingTimeout);
 
-    eventHook.addLocalListener("editor:attachmentSaving", setSavingTimeout);
+    eventHook.addLocalListener("editor:documentSaving", setSavingTimeout);
 
     eventHook.addLocalListener("editor:pageSaved", (name) => {
       if (this.savingTimeout) {
@@ -106,13 +106,13 @@ export class SyncService implements ISyncService {
       this.scheduleFileSync(path).catch(console.error);
     });
 
-    eventHook.addLocalListener("editor:attachmentSaved", (name) => {
+    eventHook.addLocalListener("editor:documentSaved", (name) => {
       if (this.savingTimeout) {
         clearTimeout(this.savingTimeout);
         this.savingTimeout = undefined;
       } else {
         console.warn(
-          "This should not happen, savingTimeout was not set. This could be a slow dedicated editor",
+          "This should not happen, savingTimeout was not set. This could be a slow document editor",
         );
       }
       this.scheduleFileSync(name).catch(console.error);
