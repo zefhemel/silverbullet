@@ -11,7 +11,7 @@ export type PageRef = {
 };
 
 /**
- * Represents a reference to an document, with optional position, anchor and header.
+ * Represents a reference to an document.
  */
 export type DocumentRef = {
   kind: "document";

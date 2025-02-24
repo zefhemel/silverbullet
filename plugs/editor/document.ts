@@ -11,6 +11,6 @@ export async function deleteDocument() {
   }
   console.log("Navigating to index page");
   await editor.navigate({ kind: "page", page: "" });
-  console.log("Deleting page from space");
+  console.log("Deleting document from space");
   await space.deleteDocument(documentName);
 }

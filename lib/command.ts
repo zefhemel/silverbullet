@@ -14,7 +14,7 @@ export type CommandDef = {
 
   hide?: boolean;
   requireMode?: "rw" | "ro";
-  requireEditor?: "any" | "page" | string;
+  requireEditor?: "any" | "page" | "notpage" | string;
 };
 
 export type AppCommand = {
