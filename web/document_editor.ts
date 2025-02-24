@@ -41,7 +41,7 @@ export class DocumentEditor {
     await finished;
 
     this.sendMessage({
-      type: "internal_init",
+      type: "internal-init",
       html: content.html,
       script: content.script,
       theme: document.getElementsByTagName("html")[0].dataset.theme,
@@ -112,7 +112,7 @@ export class DocumentEditor {
     });
   }
 
-  private messageHandler(event: any) {
+  private async messageHandler(event: any) {
     if (event.source !== this.iframe.contentWindow) return;
     const data = event.data;
     if (!data) return;
@@ -133,6 +133,28 @@ export class DocumentEditor {
 
           if (!this.currentPath) return;
           this.saveMethod(this.currentPath, data.data);
+        }
+        break;
+      case "internal-syscall":
+        {
+          let result: any;
+
+          try {
+            const response = await this.client.clientSystem.localSyscall(
+              data.name,
+              data.args,
+            );
+
+            result = { result: response };
+          } catch (e: any) {
+            result = { error: e.message };
+          }
+
+          this.sendMessage({
+            type: "internal-syscall-response",
+            id: data.id,
+            ...result,
+          });
         }
         break;
       default:
