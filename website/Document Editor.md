@@ -5,8 +5,9 @@ Document editors are provided by [[Plugs]]. To install a document editor just in
 To edit or view a document, use `Ctrl-o` to open the document navigator. Files for which a document editor is available will have their extension highlighted in blue.
 
 # Available editors
-Currently only a small demo for text files is available
+Currently only small demos are available
 - [TXT editor](https://github.com/MrMugame/silverbullet-txt/)
+- [PDF viewer](https://github.com/MrMugame/silverbullet-pdf/)
 
 # Internals
 Internally document editors work similarly to [[Markdown/Code Widgets]]. First the editor is defined inside the plug manifest. The `editor` field is used to specify the file extensions this editor can handle.
