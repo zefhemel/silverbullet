@@ -158,7 +158,7 @@ export async function instantiatePageTemplate(
       // So, page exists
       if (newPageConfig.openIfExists) {
         console.log("Page already exists, navigating there");
-        await editor.navigate({ page: pageName, pos: 0 });
+        await editor.navigate({ kind: "page", page: pageName, pos: 0 });
         return pageName;
       }
 
@@ -169,7 +169,7 @@ export async function instantiatePageTemplate(
         )
       ) {
         // Just navigate there without instantiating
-        return editor.navigate({ page: pageName, pos: 0 });
+        return editor.navigate({ kind: "page", page: pageName, pos: 0 });
       }
     } catch {
       // The preferred scenario, let's keep going
@@ -197,6 +197,7 @@ export async function instantiatePageTemplate(
       fullPageText,
     );
     await editor.navigate({
+      kind: "page",
       page: pageName,
       pos: carretPos !== -1 ? carretPos : undefined,
     });

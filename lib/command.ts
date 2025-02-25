@@ -14,6 +14,7 @@ export type CommandDef = {
 
   hide?: boolean;
   requireMode?: "rw" | "ro";
+  requireEditor?: "any" | "page" | "notpage" | string;
 };
 
 export type AppCommand = {
@@ -29,3 +30,15 @@ export type SlashCommand = {
 export type CommandHookEvents = {
   commandsUpdated(commandMap: Map<string, AppCommand>): void;
 };
+
+export function isValidEditor(
+  currentEditor: string | undefined,
+  requiredEditor: string | undefined,
+): boolean {
+  return (requiredEditor === undefined) ||
+    (currentEditor === undefined &&
+      requiredEditor === "page") ||
+    (requiredEditor === "any") ||
+    (currentEditor === requiredEditor) ||
+    (currentEditor !== undefined && requiredEditor === "notpage");
+}

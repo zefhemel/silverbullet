@@ -13,6 +13,7 @@ import type { SlashCommandHook } from "../web/hooks/slash_command.ts";
 import type { DataStoreMQ } from "$lib/data/mq.datastore.ts";
 import type { ParseTree } from "../plug-api/lib/tree.ts";
 import { SpaceLuaEnvironment } from "$common/space_lua.ts";
+import type { DocumentEditorHook } from "../web/hooks/document_editor.ts";
 
 const mqTimeout = 10000; // 10s
 const mqTimeoutRetry = 3;
@@ -26,6 +27,7 @@ export abstract class CommonSystem {
   namespaceHook!: PlugNamespaceHook;
   codeWidgetHook!: CodeWidgetHook;
   panelWidgetHook!: PanelWidgetHook;
+  documentEditorHook!: DocumentEditorHook;
 
   readonly allKnownFiles = new Set<string>();
   readonly spaceScriptCommands = new Map<string, AppCommand>();

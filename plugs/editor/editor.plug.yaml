@@ -107,6 +107,13 @@ functions:
       key: "Ctrl-Shift-k"
       mac: "Cmd-Shift-k"
 
+  openDocumentNavigator:
+    path: editor.ts:openDocumentNavigator
+    command:
+      name: "Navigate: Document Picker"
+      key: "Ctrl-o"
+      mac: "Cmd-o"
+
   openAllNavigator:
     path: editor.ts:openAllNavigator
     command:
@@ -118,11 +125,13 @@ functions:
     command:
       name: "Page: Delete"
       requireMode: rw
+      requireEditor: page
   copyPage:
     path: "./page.ts:copyPage"
     command:
       name: "Page: Copy"
       requireMode: rw
+      requireEditor: page
 
   # Completion
   pageComplete:
@@ -147,6 +156,7 @@ functions:
       name: "Navigate: To This Page"
       key: Ctrl-Enter
       mac: Cmd-Enter
+      requireEditor: page
   clickNavigate:
     path: "./navigate.ts:clickNavigate"
     events:
@@ -168,10 +178,12 @@ functions:
     path: "./editor.ts:moveToPosCommand"
     command:
       name: "Navigate: To Position"
+      requireEditor: page
   moveToLine:
     path: "./editor.ts:moveToLineCommand"
     command:
       name: "Navigate: To Line"
+      requireEditor: page
   navigateToPage:
     path: "./navigate.ts:navigateToPage"
     command:
@@ -199,6 +211,7 @@ functions:
       key: "Ctrl-Shift-."
       mac: "Cmd-Shift-."
       requireMode: rw
+      requireEditor: page
   listifySelection:
     path: ./text.ts:listifySelection
     command:
@@ -206,16 +219,19 @@ functions:
       key: "Ctrl-Shift-8"
       mac: "Cmd-Shift-8"
       requireMode: rw
+      requireEditor: page
   numberListifySelection:
     path: ./text.ts:numberListifySelection
     command:
       name: "Text: Number Listify Selection"
       requireMode: rw
+      requireEditor: page
   linkSelection:
     path: ./text.ts:linkSelection
     command:
       name: "Text: Link Selection"
       requireMode: rw
+      requireEditor: page
   bold:
     path: ./text.ts:wrapSelection
     command:
@@ -224,6 +240,7 @@ functions:
       mac: "Cmd-b"
       wrapper: "**"
       requireMode: rw
+      requireEditor: page
   italic:
     path: ./text.ts:wrapSelection
     command:
@@ -232,6 +249,7 @@ functions:
       mac: "Cmd-i"
       wrapper: "_"
       requireMode: rw
+      requireEditor: page
   strikethrough:
     path: ./text.ts:wrapSelection
     command:
@@ -239,6 +257,7 @@ functions:
       key: "Ctrl-Shift-s"
       wrapper: "~~"
       requireMode: rw
+      requireEditor: page
   marker:
     path: ./text.ts:wrapSelection
     command:
@@ -246,24 +265,28 @@ functions:
       key: "Alt-m"
       wrapper: "=="
       requireMode: rw
+      requireEditor: page
   centerCursor:
     path: "./editor.ts:centerCursorCommand"
     command:
       name: "Navigate: Center Cursor"
       key: "Ctrl-Alt-l"
       requireMode: rw
+      requireEditor: page
   deleteLine:
     path: "./editor.ts:deleteLineCommand"
     command:
       name: "Delete Line"
       key: "Ctrl-d"
       requireMode: rw
+      requireEditor: page
 
   # Debug commands
   parseCommand:
     path: ./debug.ts:parsePageCommand
     command:
       name: "Debug: Parse Document"
+      requireEditor: page
 
   # Link unfurl infrastructure
   unfurlLink:
@@ -273,6 +296,7 @@ functions:
       key: "Ctrl-Shift-u"
       mac: "Cmd-Shift-u"
       requireMode: rw
+      requireEditor: page
 
   # Title-based link unfurl
   titleUnfurlOptions:
@@ -305,10 +329,12 @@ functions:
     path: "./vim.ts:toggleVimMode"
     command:
       name: "Editor: Toggle Vim Mode"
+      requireEditor: page
   loadVimRc:
     path: "./vim.ts:loadVimRc"
     command:
       name: "Editor: Vim: Load VIMRC"
+      requireEditor: page
     events:
       - editor:modeswitch
 
@@ -317,6 +343,7 @@ functions:
     path: ./stats.ts:statsCommand
     command:
       name: "Stats: Show"
+      requireEditor: page
   reloadUICommand:
     path: ./debug.ts:reloadUICommand
     command:
@@ -354,6 +381,7 @@ functions:
       name: "Outline: Move Up"
       key: "Alt-ArrowUp"
       requireMode: rw
+      requireEditor: page
 
   outlineMoveDown:
     path: ./outline.ts:moveItemDown
@@ -361,6 +389,7 @@ functions:
       name: "Outline: Move Down"
       key: "Alt-ArrowDown"
       requireMode: rw
+      requireEditor: page
 
   outlineIndent:
     path: ./outline.ts:indentItem
@@ -368,6 +397,7 @@ functions:
       name: "Outline: Move Right"
       key: "Alt->"
       requireMode: rw
+      requireEditor: page
 
   outlineOutdent:
     path: ./outline.ts:outdentItem
@@ -375,6 +405,7 @@ functions:
       name: "Outline: Move Left"
       key: "Alt-<"
       requireMode: rw
+      requireEditor: page
 
   # Outline folding commands
   foldCommand:
@@ -382,32 +413,38 @@ functions:
     command:
       name: "Outline: Fold"
       key: "Ctrl-Alt-["
+      requireEditor: page
   unfoldCommand:
     path: ./outline.ts:unfoldCommand
     command:
       name: "Outline: Unfold"
       key: "Ctrl-Alt-]"
+      requireEditor: page
   toggleFoldCommand:
     path: ./outline.ts:toggleFoldCommand
     command:
       name: "Outline: Toggle Fold"
       key: "Alt-Shift-f"
+      requireEditor: page
   foldAllCommand:
     path: ./outline.ts:foldAllCommand
     command:
       name: "Outline: Fold All"
       key: "Ctrl-Alt-Shift-["
+      requireEditor: page
   unfoldAllCommand:
     path: ./outline.ts:unfoldAllCommand
     command:
       name: "Outline: Unfold All"
       key: "Ctrl-Alt-Shift-]"
+      requireEditor: page
   findInPageCommand:
     path: editor.ts:findInPageCommand
     command:
       name: "Editor: Find in Page"
       key: "Ctrl-f"
       mac: "Cmd-f"
+      requireEditor: page
 
   # Outline helper functions
   determineItemBounds:
@@ -423,6 +460,7 @@ functions:
       key: "Ctrl-z"
       mac: "Cmd-z"
       requireMode: rw
+      requireEditor: page
   redoCommand:
     path: ./editor.ts:redoCommand
     command:
@@ -430,6 +468,7 @@ functions:
       key: "Ctrl-y"
       mac: "Cmd-Shift-z"
       requireMode: rw
+      requireEditor: page
 
   # Demo
   customFlashMessage:
@@ -439,3 +478,10 @@ functions:
       hide: true
       contexts:
         - internal
+
+  deleteDocument:
+    path: "./document.ts:deleteDocument"
+    command:
+      name: "Document: Delete"
+      requireMode: rw
+      requireEditor: notpage

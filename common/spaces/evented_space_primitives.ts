@@ -27,15 +27,15 @@ export class EventedSpacePrimitives implements SpacePrimitives {
     private eventHook: EventHook,
     private spaceSnapshot: Record<string, number> = {},
   ) {
-    // Translate file change events for attachments into attachment:index events
+    // Translate file change events for documents into document:index events
     this.eventHook.addLocalListener(
       "file:changed",
       async (
         name: string,
       ) => {
         if (!name.endsWith(".md") && !name.startsWith(plugPrefix)) {
-          // Not a page nor plug, so an attachment!
-          await this.dispatchEvent("attachment:index", name);
+          // Not a page nor plug, so a document!
+          await this.dispatchEvent("document:index", name);
         }
       },
     );

@@ -1,6 +1,6 @@
 import type {
-  AttachmentMeta,
   CompleteEvent,
+  DocumentMeta,
   FileMeta,
   PageMeta,
   QueryExpression,
@@ -36,7 +36,7 @@ export async function pageComplete(completeEvent: CompleteEvent) {
 
   const prefix = match[1];
 
-  let allPages: (PageMeta | AttachmentMeta)[] = [];
+  let allPages: (PageMeta | DocumentMeta)[] = [];
 
   if (prefix.startsWith("^")) {
     // A carrot prefix means we're looking for a meta page
@@ -73,9 +73,9 @@ export async function pageComplete(completeEvent: CompleteEvent) {
       queryObjects<PageMeta>("page", {
         filter: ["not", isMetaPageFilter],
       }, 5),
-      // All attachments
-      queryObjects<AttachmentMeta>("attachment", {
-        // All attachment that do not start with a _ (internal attachments)
+      // All documents
+      queryObjects<DocumentMeta>("document", {
+        // All documents that do not start with a _ (internal documents)
         filter: ["!=~", ["attr", "name"], ["regexp", "^_", ""]],
       }, 5),
       // And all links to non-existing pages (to augment the existing ones)

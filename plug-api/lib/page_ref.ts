@@ -2,12 +2,24 @@
  * Represents a reference to a page, with optional position, anchor and header.
  */
 export type PageRef = {
+  kind: "page";
   page: string;
   pos?: number | { line: number; column: number };
   anchor?: string;
   header?: string;
   meta?: boolean;
 };
+
+/**
+ * Represents a reference to an document.
+ */
+export type DocumentRef = {
+  kind: "document";
+  // This isn't really referring to a page, but this saves us from a lot of name changing
+  page: string;
+};
+
+export type LocationRef = PageRef | DocumentRef;
 
 /**
  * Checks if a name looks like a full path (with a file extension), is not a conflicted file and not a search page.
@@ -22,14 +34,18 @@ export function looksLikePathWithExtension(name: string): boolean {
  */
 export function validatePageName(name: string) {
   // Page can not be empty and not end with a file extension (e.g. "bla.md")
-  if (name === "") {
-    throw new Error("Page name can not be empty");
-  }
-  if (name.startsWith(".")) {
-    throw new Error("Page name cannot start with a '.'");
-  }
+  validatePath(name);
   if (looksLikePathWithExtension(name)) {
     throw new Error("Page name can not end with a file extension");
+  }
+}
+
+export function validatePath(path: string) {
+  if (path === "") {
+    throw new Error("Path can not be empty");
+  }
+  if (path.startsWith(".")) {
+    throw new Error("Path cannot start with a '.'");
   }
 }
 
@@ -48,7 +64,7 @@ export function parsePageRef(name: string): PageRef {
   if (name.startsWith("[[") && name.endsWith("]]")) {
     name = name.slice(2, -2);
   }
-  const pageRef: PageRef = { page: name };
+  const pageRef: PageRef = { kind: "page", page: name };
   if (pageRef.page.startsWith("^")) {
     // A caret prefix means we're looking for a meta page, but that doesn't matter for most use cases
     pageRef.page = pageRef.page.slice(1);
@@ -82,6 +98,16 @@ export function parsePageRef(name: string): PageRef {
   return pageRef;
 }
 
+export function parseDocumentRef(name: string): DocumentRef {
+  return { kind: "document", page: name };
+}
+
+export function parseLocationRef(name: string): LocationRef {
+  return looksLikePathWithExtension(name)
+    ? parseDocumentRef(name)
+    : parsePageRef(name);
+}
+
 /**
  * The inverse of parsePageRef, encodes a PageRef object into a string.
  * @param pageRef the page reference to encode
@@ -106,6 +132,16 @@ export function encodePageRef(pageRef: PageRef): string {
     name += `#${pageRef.header}`;
   }
   return name;
+}
+
+export function encodeDocumentRef(documentRef: DocumentRef): string {
+  return documentRef.page;
+}
+
+export function encodeLocationRef(locationRef: LocationRef): string {
+  return locationRef.kind === "page"
+    ? encodePageRef(locationRef)
+    : encodeDocumentRef(locationRef);
 }
 
 /**

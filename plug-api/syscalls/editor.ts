@@ -1,6 +1,6 @@
 import type { PageMeta, UploadFile } from "../types.ts";
 import { syscall } from "../syscall.ts";
-import type { PageRef } from "../lib/page_ref.ts";
+import type { LocationRef } from "../lib/page_ref.ts";
 import type { FilterOption } from "@silverbulletmd/silverbullet/type/client";
 
 /**
@@ -23,6 +23,23 @@ export function getCurrentPage(): Promise<string> {
  */
 export function getCurrentPageMeta(): Promise<PageMeta | undefined> {
   return syscall("editor.getCurrentPageMeta");
+}
+
+/**
+ * Returns the name of the page or document currently open in the editor.
+ * @param extension If true returns page paths with the their `.md` extension
+ * @returns the current page path
+ */
+export function getCurrentPath(extension: boolean = false): Promise<string> {
+  return syscall("editor.getCurrentPath", extension);
+}
+
+/**
+ * Returns the name of the currently open editor.
+ * @returns the name of the current editor
+ */
+export function getCurrentEditor(): Promise<string> {
+  return syscall("editor.getCurrentEditor");
 }
 
 /**
@@ -80,11 +97,11 @@ export function save(): Promise<void> {
  * @param newWindow whether to open the page in a new window
  */
 export function navigate(
-  pageRef: PageRef,
+  locationRef: LocationRef,
   replaceState = false,
   newWindow = false,
 ): Promise<void> {
-  return syscall("editor.navigate", pageRef, replaceState, newWindow);
+  return syscall("editor.navigate", locationRef, replaceState, newWindow);
 }
 
 /**
@@ -92,7 +109,7 @@ export function navigate(
  * @param mode the mode to open the navigator in
  */
 export function openPageNavigator(
-  mode: "page" | "meta" | "all" = "page",
+  mode: "page" | "meta" | "document" | "all" = "page",
 ): Promise<void> {
   return syscall("editor.openPageNavigator", mode);
 }

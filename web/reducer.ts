@@ -7,12 +7,55 @@ export default function reducer(
 ): AppViewState {
   // console.log("Got action", action);
   switch (action.type) {
+    case "document-editor-loading":
+      return {
+        ...state,
+        isLoading: false,
+        current: {
+          kind: "document",
+          path: action.name,
+          // Do a best effort job of filling in the meta data, as the page is not loaded yet
+          meta: {
+            ref: action.name,
+            tag: "document",
+            name: action.name,
+            contentType: "",
+            created: "",
+            lastModified: "",
+            size: 0,
+            perm: "rw",
+            extension: "",
+          },
+        },
+      };
+    case "document-editor-loaded":
+      return {
+        ...state,
+        isLoading: false,
+        current: {
+          kind: "document",
+          path: action.meta.name,
+          meta: action.meta,
+        },
+      };
     case "page-loading":
       return {
         ...state,
         isLoading: true,
-        currentPage: action.name,
-        panels: state.currentPage === action.name ? state.panels : {
+        current: {
+          kind: "page",
+          path: action.name,
+          // Do a best effort job of filling in the meta data
+          meta: {
+            ref: action.name,
+            tag: "page",
+            name: action.name,
+            lastModified: "",
+            created: "",
+            perm: "rw",
+          },
+        },
+        panels: state.current?.path === action.name ? state.panels : {
           ...state.panels,
           // Hide these by default to avoid flickering
           top: {},
@@ -30,15 +73,20 @@ export default function reducer(
             ? { ...pageMeta, lastOpened: Date.now() }
             : pageMeta
         ),
-        currentPage: action.meta.name,
-        currentPageMeta: action.meta,
+        current: {
+          kind: "page",
+          path: action.meta.name,
+          meta: action.meta as PageMeta,
+        },
       };
     }
+    case "document-editor-changed":
     case "page-changed":
       return {
         ...state,
         unsavedChanges: true,
       };
+    case "document-editor-saved":
     case "page-saved": {
       return {
         ...state,
@@ -50,9 +98,14 @@ export default function reducer(
       state.allPages = state.allPages.map((pageMeta) =>
         pageMeta.name === action.meta.name ? action.meta : pageMeta
       );
+      // Can't update page meta if not on a page
+      if (state.current?.kind !== "page") return state;
       return {
         ...state,
-        currentPageMeta: action.meta,
+        current: {
+          ...state.current,
+          meta: action.meta,
+        },
       };
     }
     case "sync-change":
@@ -76,7 +129,7 @@ export default function reducer(
         if (oldPageMetaItem && oldPageMetaItem.lastOpened) {
           pageMeta.lastOpened = oldPageMetaItem.lastOpened;
         }
-        if (pageMeta.name === state.currentPage) {
+        if (pageMeta.name === state.current?.path) {
           currPageMeta = pageMeta;
         }
       }
@@ -85,9 +138,15 @@ export default function reducer(
         allPages: action.allPages,
       };
       if (currPageMeta) {
-        newState.currentPageMeta = currPageMeta;
+        newState.current!.meta = currPageMeta;
       }
       return newState;
+    }
+    case "update-document-list": {
+      return {
+        ...state,
+        allDocuments: action.allDocuments,
+      };
     }
     case "start-navigate": {
       return {

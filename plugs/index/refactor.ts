@@ -69,6 +69,26 @@ export async function renamePageLinkCommand() {
 }
 
 /**
+ * Renames a single document.
+ * @param cmdDef Optional command arguments
+ * @param cmdDef.oldDocument The current name of the document to rename.
+ * @param cmdDef.document The name to rename the document to. If not provided the
+ *   user will be prompted to enter a new name.
+ * @returns True if the rename succeeded; otherwise, false.
+ */
+export async function renameDocumentCommand(cmdDef: any) {
+  const oldName: string = cmdDef.oldDocument || await editor.getCurrentPath();
+  const newName: string = cmdDef.document ||
+    await editor.prompt(`Rename ${oldName} to:`, oldName);
+  if (!newName) {
+    return false;
+  }
+  const pageList: [string, string][] = [[oldName, newName]];
+  await batchRenameFiles(pageList);
+  return true;
+}
+
+/**
  * Renames any amount of files.
  * If renaming pages, names should be passed with a .md extension
  * @param fileList An array of tuples containing [FileToBeRenamed, NewFileName]
@@ -116,7 +136,7 @@ export async function batchRenameFiles(fileList: [string, string][]) {
         if (newName.endsWith(".md")) {
           await renamePage(oldName.slice(0, -3), newName.slice(0, -3));
         } else {
-          await renameAttachment(oldName, newName);
+          await renameDocument(oldName, newName);
         }
       } catch (e: any) {
         if (e.message === "Not found") {
@@ -134,14 +154,14 @@ export async function batchRenameFiles(fileList: [string, string][]) {
   }
 }
 
-// Rename a page, update any backlinks and linked attachments
+// Rename a page, update any backlinks and linked documents
 async function renamePage(oldName: string, newName: string) {
   let text = await space.readPage(oldName);
 
-  // Update relative links and attachments on this page
+  // Update relative links and documents on this page
   const oldFolder = folderName(oldName);
   const newFolder = folderName(newName);
-  const attachmentsToMove = new Set<string>();
+  const documentsToMove = new Set<string>();
   // Links only need to be updated if the folder changes
   if (oldFolder !== newFolder) {
     const linksInPage = await queryObjects<LinkObject>("link", {
@@ -151,11 +171,11 @@ async function renamePage(oldName: string, newName: string) {
     const linksToUpdate: ObjectValue<LinkObject>[] = [];
     for (const link of linksInPage) {
       if (link.toFile && folderName(link.toFile) === oldFolder) {
-        const attBackLinks = await getBackLinks(link.toFile);
-        if (attBackLinks.filter((a) => a.page !== oldName).length === 0) {
-          // Attachments is in the same folder as the page
+        const documentBackLinks = await getBackLinks(link.toFile);
+        if (documentBackLinks.filter((a) => a.page !== oldName).length === 0) {
+          // Documents is in the same folder as the page
           // and is only linked to on this page, move it along with the page
-          attachmentsToMove.add(link.toFile);
+          documentsToMove.add(link.toFile);
           continue;
         }
       }
@@ -188,21 +208,21 @@ async function renamePage(oldName: string, newName: string) {
   // Write the new page
   const newPageMeta = await space.writePage(newName, text);
 
-  // Move attachements along with page
-  const batchRenameAttachments: [string, string][] = [];
-  for (const att of attachmentsToMove) {
+  // Move documents along with page
+  const batchRenameDocuments: [string, string][] = [];
+  for (const document of documentsToMove) {
     const newAttName = oldFolder.length === 0
-      ? newFolder + "/" + att
-      : att.replace(oldFolder, newFolder).replace(/^\//, "");
-    batchRenameAttachments.push([att, newAttName]);
+      ? newFolder + "/" + document
+      : document.replace(oldFolder, newFolder).replace(/^\//, "");
+    batchRenameDocuments.push([document, newAttName]);
   }
-  if (batchRenameAttachments.length > 0) {
-    await batchRenameFiles(batchRenameAttachments);
+  if (batchRenameDocuments.length > 0) {
+    await batchRenameFiles(batchRenameDocuments);
   }
 
   // Navigate to new page if currently viewing old page
   if (await editor.getCurrentPage() === oldName) {
-    await editor.navigate({ page: newName, pos: 0 }, true);
+    await editor.navigate({ kind: "page", page: newName, pos: 0 }, true);
   }
   // Handling the edge case of a changing page name just in casing on a case insensitive FS
   const oldPageMeta = await space.getPageMeta(oldName);
@@ -218,26 +238,30 @@ async function renamePage(oldName: string, newName: string) {
   if (updatedRefences > 0) {
     message = `${message}, updated ${updatedRefences} backlinks`;
   }
-  if (attachmentsToMove.size > 0) {
-    message = `${message}, moved ${attachmentsToMove.size} attachments`;
+  if (documentsToMove.size > 0) {
+    message = `${message}, moved ${documentsToMove.size} documents`;
   }
   await editor.flashNotification(message, "info");
 }
 
-// Rename an attachment and update any backlinks
-async function renameAttachment(
+// Rename a document and update any backlinks
+async function renameDocument(
   oldName: string,
   newName: string,
 ) {
   // Move the file
-  const oldFile = await space.readAttachment(oldName);
-  const newFileMeta = await space.writeAttachment(newName, oldFile);
+  const oldFile = await space.readDocument(oldName);
+  const newFileMeta = await space.writeDocument(newName, oldFile);
+
+  if (await editor.getCurrentPath() === oldName) {
+    await editor.navigate({ kind: "document", page: newName }, true);
+  }
 
   // Handling the edge case of a changing file name just in casing on a case insensitive FS
-  const oldFileMeta = await space.getAttachmentMeta(oldName);
+  const oldFileMeta = await space.getDocumentMeta(oldName);
   if (oldFileMeta.lastModified !== newFileMeta.lastModified) {
     // If they're the same, let's assume it's the same file (case insensitive FS) and not delete, otherwise...
-    await space.deleteAttachment(oldName);
+    await space.deleteDocument(oldName);
   }
 
   // Update any backlinks
@@ -274,9 +298,9 @@ export async function renamePrefixCommand(cmdDef: any) {
     return false;
   }
 
-  const allAttachments = await space.listAttachments();
+  const allDocuments = await space.listDocuments();
   const allPages = await space.listPages();
-  let allAffectedFiles = allAttachments.map((file) => file.name).filter((
+  let allAffectedFiles = allDocuments.map((file) => file.name).filter((
     file,
   ) => file.startsWith(oldPrefix));
   allAffectedFiles = allAffectedFiles.concat(
@@ -335,7 +359,7 @@ export async function extractToPageCommand() {
   console.log("Writing new page to space");
   await space.writePage(newName, text);
   console.log("Navigating to new page");
-  await editor.navigate({ page: newName });
+  await editor.navigate({ kind: "page", page: newName });
 }
 
 /**

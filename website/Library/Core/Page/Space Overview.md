@@ -5,7 +5,7 @@ This page compiles some useful things about your space and may also be useful fo
 # Stats
 ```template
 **Total pages:** {{count({page select name})}}
-**Total attachments:** {{count({attachment select name})}}
+**Total documents:** {{count({document select name})}}
 **Total tags:** {{count({tag select name})}}
 ```
 

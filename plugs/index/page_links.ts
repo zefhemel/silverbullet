@@ -39,7 +39,7 @@ export type LinkObject = ObjectValue<
     asTemplate: boolean;
     toFile?: never;
   } | {
-    // Attachment Link
+    // Document Link
     // The file the link points to
     toFile: string;
     // The page the link occurs in
@@ -86,7 +86,7 @@ export async function indexLinks({ name, tree }: IndexTreeEvent) {
         page: name,
         asTemplate: false,
       };
-      // Assume link is to an attachment if it has
+      // Assume link is to a document if it has
       // an extension, to a page otherwise
       if (looksLikePathWithExtension(url)) {
         link.toFile = url;
@@ -129,7 +129,7 @@ export async function indexLinks({ name, tree }: IndexTreeEvent) {
         page: name,
         asTemplate: false,
       };
-      // Assume link is to an attachment if it has
+      // Assume link is to a document if it has
       // an extension, to a page otherwise
       if (looksLikePathWithExtension(url)) {
         link.toFile = url;
@@ -169,7 +169,7 @@ export async function indexLinks({ name, tree }: IndexTreeEvent) {
             pos: pos,
             asTemplate: true,
           };
-          // Assume link is to an attachment if it has
+          // Assume link is to a document if it has
           // an extension, to a page otherwise
           if (looksLikePathWithExtension(url)) {
             link.toFile = resolvePath(name, "/" + url);

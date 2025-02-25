@@ -32,7 +32,7 @@ export type PageDecoration = {
   renderWidgets?: boolean; // Defaults to true
 };
 
-export type AttachmentMeta = ObjectValue<
+export type DocumentMeta = ObjectValue<
   {
     name: string;
     contentType: string;
@@ -40,6 +40,7 @@ export type AttachmentMeta = ObjectValue<
     lastModified: string;
     size: number;
     perm: "ro" | "rw";
+    extension: string;
   } & Record<string, any>
 >;
 
@@ -176,6 +177,14 @@ export type CodeWidgetButton = {
   invokeFunction: string[];
 };
 
+// Document editors stuff
+export type DocumentEditorCallback = () => Promise<DocumentEditorContent>;
+
+export type DocumentEditorContent = {
+  html: string;
+  script?: string;
+};
+
 export type LintDiagnostic = {
   from: number;
   to: number;
@@ -201,6 +210,8 @@ export type AppEvent =
   | "editor:pageReloaded"
   | "editor:pageSaving"
   | "editor:pageSaved"
+  | "editor:documentSaving"
+  | "editor:documentSaved"
   | "editor:modeswitch"
   | "plugs:loaded"
   | "editor:pageModified";

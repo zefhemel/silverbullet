@@ -48,6 +48,7 @@ import { luaSyscalls } from "$common/syscalls/lua.ts";
 import { indexSyscalls } from "$common/syscalls/index.ts";
 import { commandSyscalls } from "$common/syscalls/command.ts";
 import { eventListenerSyscalls } from "$common/syscalls/event.ts";
+import { DocumentEditorHook } from "./hooks/document_editor.ts";
 
 const plugNameExtractRegex = /\/(.+)\.plug\.js$/;
 
@@ -97,6 +98,10 @@ export class ClientSystem extends CommonSystem {
     // Panel widget hook
     this.panelWidgetHook = new PanelWidgetHook();
     this.system.addHook(this.panelWidgetHook);
+
+    // Document editor hook
+    this.documentEditorHook = new DocumentEditorHook();
+    this.system.addHook(this.documentEditorHook);
 
     // MQ hook
     if (client.syncMode) {

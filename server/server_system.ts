@@ -207,7 +207,7 @@ export class ServerSystem extends CommonSystem {
     this.eventHook.addLocalListener(
       "file:listed",
       (allFiles: FileMeta[]) => {
-        // Update list of known pages and attachments
+        // Update list of known pages and documents
         this.allKnownFiles.clear();
         allFiles.forEach((f) => {
           if (!f.name.startsWith(plugPrefix)) {
@@ -219,7 +219,7 @@ export class ServerSystem extends CommonSystem {
     this.eventHook.addLocalListener(
       "file:deleted",
       (path: string) => {
-        // Update list of known pages and attachments
+        // Update list of known pages and documents
         this.allKnownFiles.delete(path);
       },
     );

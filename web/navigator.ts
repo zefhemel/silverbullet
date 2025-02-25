@@ -1,26 +1,30 @@
 import {
+  type DocumentRef,
   encodePageURI,
+  type LocationRef,
   type PageRef,
-  parsePageRef,
+  parseLocationRef,
 } from "../plug-api/lib/page_ref.ts";
 import type { Client } from "./client.ts";
 import { cleanPageRef } from "@silverbulletmd/silverbullet/lib/resolve";
 import { renderTheTemplate } from "$common/syscalls/template.ts";
 import { safeRun } from "../lib/async.ts";
 
-export type PageState = PageRef & {
-  scrollTop?: number;
-  selection?: {
-    anchor: number;
-    head?: number;
-  };
-};
+export type LocationState =
+  | PageRef & {
+    scrollTop?: number;
+    selection?: {
+      anchor: number;
+      head?: number;
+    };
+  }
+  | DocumentRef;
 
 export class PathPageNavigator {
   navigationResolve?: () => void;
   indexPage!: string;
 
-  openPages = new Map<string, PageState>();
+  openLocations = new Map<string, LocationState>();
 
   constructor(
     private client: Client,
@@ -47,16 +51,24 @@ export class PathPageNavigator {
    * @param replaceState whether to update the state in place (rather than to push a new state)
    */
   async navigate(
-    pageRef: PageRef,
+    pathRef: LocationRef,
     replaceState = false,
   ) {
-    if (pageRef.page === this.indexPage) {
-      pageRef.page = "";
+    if (pathRef.kind === "page" && pathRef.page === this.indexPage) {
+      pathRef.page = "";
     }
-    const currentState = this.buildCurrentPageState();
+    const currentState = this.buildCurrentLocationState();
     // No need to keep pos and anchor if we already have scrollTop and selection
-    const cleanState = { ...currentState, pos: undefined, anchor: undefined };
-    this.openPages.set(currentState.page || this.indexPage, cleanState);
+    const cleanState: LocationState = currentState.kind === "page"
+      ? {
+        ...currentState,
+        pos: undefined,
+        anchor: undefined,
+      }
+      : currentState;
+
+    this.openLocations.set(currentState.page || this.indexPage, cleanState);
+
     if (!replaceState) {
       globalThis.history.replaceState(
         cleanState,
@@ -64,60 +76,72 @@ export class PathPageNavigator {
         `/${encodePageURI(currentState.page)}`,
       );
       globalThis.history.pushState(
-        pageRef,
+        pathRef,
         "",
-        `/${encodePageURI(pageRef.page)}`,
+        `/${encodePageURI(pathRef.page)}`,
       );
     } else {
       globalThis.history.replaceState(
-        pageRef,
+        pathRef,
         "",
-        `/${encodePageURI(pageRef.page)}`,
+        `/${encodePageURI(pathRef.page)}`,
       );
     }
+
     globalThis.dispatchEvent(
       new PopStateEvent("popstate", {
-        state: pageRef,
+        state: pathRef,
       }),
     );
+
     await new Promise<void>((resolve) => {
       this.navigationResolve = resolve;
     });
     this.navigationResolve = undefined;
   }
 
-  buildCurrentPageState(): PageState {
-    const pageState: PageState = parsePageRefFromURI();
-    const mainSelection = this.client.editorView.state.selection.main;
-    pageState.scrollTop = this.client.editorView.scrollDOM.scrollTop;
-    pageState.selection = {
-      head: mainSelection.head,
-      anchor: mainSelection.anchor,
-    };
-    return pageState;
+  buildCurrentLocationState(): LocationState {
+    const locationState: LocationState = parseLocationRefFromURI();
+
+    if (
+      locationState.kind === "page"
+    ) {
+      const editorView = this.client.editorView;
+
+      const mainSelection = editorView.state.selection.main;
+      locationState.scrollTop = editorView.scrollDOM.scrollTop;
+      locationState.selection = {
+        head: mainSelection.head,
+        anchor: mainSelection.anchor,
+      };
+    }
+
+    return locationState;
   }
 
   subscribe(
     pageLoadCallback: (
-      pageState: PageState,
+      locationState: LocationState,
     ) => Promise<void>,
   ): void {
     const cb = (event: PopStateEvent) => {
       safeRun(async () => {
-        const popState = event.state;
+        const popState = event.state as LocationState;
         if (popState) {
           // This is the usual case
           if (!popState.page) {
+            popState.kind = "page";
             popState.page = this.indexPage;
           }
           if (
+            popState.kind === "page" &&
             popState.anchor === undefined && popState.pos === undefined &&
             popState.selection === undefined &&
             popState.scrollTop === undefined
           ) {
             // Pretty low-context popstate, so let's leverage openPages
-            const openPage = this.openPages.get(popState.page);
-            if (openPage) {
+            const openPage = this.openLocations.get(popState.page);
+            if (openPage && openPage.kind === "page") {
               popState.selection = openPage.selection;
               popState.scrollTop = openPage.scrollTop;
             }
@@ -125,8 +149,9 @@ export class PathPageNavigator {
           await pageLoadCallback(popState);
         } else {
           // This occurs when the page is loaded completely fresh with no browser history around it
-          const pageRef = parsePageRefFromURI();
+          const pageRef = parseLocationRefFromURI();
           if (!pageRef.page) {
+            pageRef.kind = "page";
             pageRef.page = this.indexPage;
           }
           await pageLoadCallback(pageRef);
@@ -140,20 +165,20 @@ export class PathPageNavigator {
 
     cb(
       new PopStateEvent("popstate", {
-        state: this.buildCurrentPageState(),
+        state: this.buildCurrentLocationState(),
       }),
     );
   }
 }
 
-export function parsePageRefFromURI(): PageRef {
-  const pageRef = parsePageRef(decodeURIComponent(
+export function parseLocationRefFromURI(): LocationRef {
+  const locationRef = parseLocationRef(decodeURIComponent(
     location.pathname.substring(1),
   ));
 
-  if (location.hash) {
-    pageRef.header = decodeURIComponent(location.hash.substring(1));
+  if (location.hash && locationRef.kind === "page") {
+    locationRef.header = decodeURIComponent(location.hash.substring(1));
   }
 
-  return pageRef;
+  return locationRef;
 }

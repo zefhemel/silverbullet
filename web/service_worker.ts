@@ -108,8 +108,18 @@ self.addEventListener("fetch", (event: any) => {
         pathname.startsWith("/!")
       ) {
         return fetch(request);
-      } else if (looksLikePathWithExtension(pathname)) {
-        // If this is a /*.* request, this can either be a plug worker load or an attachment load
+      } else if (
+        pathname.endsWith(".md") &&
+        request.headers.get("accept") !== "application/octet-stream" &&
+        request.headers.get("sec-fetch-mode") !== "cors"
+      ) {
+        return Response.redirect(`${pathname.slice(0, -3)}`);
+      } else if (
+        (looksLikePathWithExtension(pathname) &&
+          !request.headers.get("accept").includes("text/html")) ||
+        requestUrl.searchParams.get("raw") === "true"
+      ) {
+        // If this is a /*.* request, this can either be a plug worker load or an document load
         return handleLocalFileRequest(request, pathname);
       } else {
         // Must be a page URL, let's serve index.html which will handle it

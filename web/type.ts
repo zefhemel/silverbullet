@@ -1,7 +1,10 @@
 import type { AppCommand } from "../lib/command.ts";
 import type { FilterOption, Notification, PanelMode } from "../type/client.ts";
 import { type Config, defaultConfig } from "../type/config.ts";
-import type { PageMeta } from "@silverbulletmd/silverbullet/types";
+import type {
+  DocumentMeta,
+  PageMeta,
+} from "@silverbulletmd/silverbullet/types";
 
 export type PanelConfig = {
   mode?: PanelMode;
@@ -10,9 +13,20 @@ export type PanelConfig = {
 };
 
 export type AppViewState = {
-  currentPage?: string;
-  currentPageMeta?: PageMeta;
+  current?:
+    | {
+      kind: "page";
+      meta: PageMeta;
+      path: string;
+    }
+    | {
+      kind: "document";
+      meta: DocumentMeta;
+      path: string;
+    };
+
   allPages: PageMeta[];
+  allDocuments: DocumentMeta[];
 
   isLoading: boolean;
   isMobile: boolean;
@@ -37,7 +51,7 @@ export type AppViewState = {
   };
 
   // Page navigator mode
-  pageNavigatorMode: "page" | "meta" | "all";
+  pageNavigatorMode: "page" | "meta" | "document" | "all";
 
   // Filter box
   showFilterBox: boolean;
@@ -80,6 +94,7 @@ export const initialViewState: AppViewState = {
   },
   config: defaultConfig,
   allPages: [],
+  allDocuments: [],
   commands: new Map(),
   recentCommands: new Map(),
   notifications: [],
@@ -99,11 +114,16 @@ export type Action =
   | { type: "page-loading"; name: string }
   | { type: "page-changed" }
   | { type: "page-saved" }
+  | { type: "document-editor-loaded"; meta: DocumentMeta }
+  | { type: "document-editor-loading"; name: string }
+  | { type: "document-editor-changed" }
+  | { type: "document-editor-saved" }
   | { type: "sync-change"; syncSuccess: boolean }
   | { type: "update-current-page-meta"; meta: PageMeta }
   | { type: "update-page-list"; allPages: PageMeta[] }
+  | { type: "update-document-list"; allDocuments: DocumentMeta[] }
   | { type: "config-loaded"; config: Config }
-  | { type: "start-navigate"; mode: "page" | "meta" | "all" }
+  | { type: "start-navigate"; mode: "page" | "meta" | "document" | "all" }
   | { type: "stop-navigate" }
   | {
     type: "update-commands";

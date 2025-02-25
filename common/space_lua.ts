@@ -74,6 +74,7 @@ export function resolveASTReference(ctx?: ASTCtx): PageRef | null {
   }
   const pageRef = parsePageRef(ctx.ref);
   return {
+    kind: "page",
     page: pageRef.page,
     pos: (pageRef.pos as number) + "```space-lua\n".length + ctx.from!,
   };

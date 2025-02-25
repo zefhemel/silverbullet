@@ -19,7 +19,10 @@ import { getCM as vimGetCm, Vim } from "@replit/codemirror-vim";
 import type { SysCallMapping } from "$lib/plugos/system.ts";
 import type { FilterOption } from "@silverbulletmd/silverbullet/type/client";
 import type { PageMeta, UploadFile } from "../../plug-api/types.ts";
-import type { PageRef } from "@silverbulletmd/silverbullet/lib/page_ref";
+import {
+  type LocationRef,
+  parseLocationRef,
+} from "@silverbulletmd/silverbullet/lib/page_ref";
 import { openSearchPanel } from "@codemirror/search";
 
 export function editorSyscalls(client: Client): SysCallMapping {
@@ -28,7 +31,13 @@ export function editorSyscalls(client: Client): SysCallMapping {
       return client.currentPage;
     },
     "editor.getCurrentPageMeta": (): PageMeta | undefined => {
-      return client.ui.viewState.currentPageMeta;
+      return client.ui.viewState.current?.meta;
+    },
+    "editor.getCurrentPath": (_ctx, extension: boolean): string => {
+      return client.currentPath(extension);
+    },
+    "editor.getCurrentEditor": (): string => {
+      return client.documentEditor?.name || "page";
     },
     "editor.getText": () => {
       return client.editorView.state.sliceDoc();
@@ -47,14 +56,17 @@ export function editorSyscalls(client: Client): SysCallMapping {
     },
     "editor.navigate": async (
       _ctx,
-      pageRef: PageRef | string,
+      locationRef: LocationRef | string,
       replaceState = false,
       newWindow = false,
     ) => {
-      if (typeof pageRef === "string") {
-        pageRef = { page: pageRef };
+      if (typeof locationRef === "string") {
+        locationRef = parseLocationRef(locationRef);
+      } else if (locationRef.kind === undefined) {
+        // @ts-ignore: This is for legacy support
+        locationRef.kind === "page";
       }
-      await client.navigate(pageRef, replaceState, newWindow);
+      await client.navigate(locationRef, replaceState, newWindow);
     },
     "editor.reloadPage": async () => {
       await client.reloadPage();
@@ -78,14 +90,7 @@ export function editorSyscalls(client: Client): SysCallMapping {
       );
     },
     "editor.openUrl": (_ctx, url: string, existingWindow = false) => {
-      if (!existingWindow) {
-        const win = globalThis.open(url, "_blank");
-        if (win) {
-          win.focus();
-        }
-      } else {
-        location.href = url;
-      }
+      client.openUrl(url, existingWindow);
     },
     "editor.newWindow": () => {
       globalThis.open(
@@ -294,7 +299,7 @@ export function editorSyscalls(client: Client): SysCallMapping {
     },
     "editor.openPageNavigator": (
       _ctx,
-      mode: "page" | "meta" | "all" = "page",
+      mode: "page" | "meta" | "document" | "all" = "page",
     ) => {
       client.startPageNavigate(mode);
     },

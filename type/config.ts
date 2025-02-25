@@ -37,7 +37,7 @@ export type Config = {
   shortcuts?: Shortcut[];
   // DEPRECATED: Use smartQuotes instead
   useSmartQuotes?: boolean;
-  maximumAttachmentSize?: number;
+  maximumDocumentSize?: number;
   libraries?: LibraryDef[];
   // Open the last page that was open when the app was closed
   pwaOpenLastPage?: boolean;
@@ -70,7 +70,7 @@ type SchemaConfig = {
 export const defaultConfig: Config = {
   indexPage: "index",
   hideSyncButton: false,
-  maximumAttachmentSize: 10, // MiB
+  maximumDocumentSize: 10, // MiB
   defaultLinkStyle: "wikilink", // wikilink [[]] or markdown []()
   actionButtons: [], // Actually defaults to defaultActionButtons
   autoCloseBrackets: "([{`",

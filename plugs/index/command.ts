@@ -9,7 +9,7 @@ import {
 import type { IndexEvent, MQMessage } from "@silverbulletmd/silverbullet/types";
 import { isTemplate } from "$lib/cheap_yaml.ts";
 import { sleep } from "$lib/async.ts";
-import { indexAttachment } from "./attachment.ts";
+import { indexDocument } from "./document.ts";
 import { clearFileIndex } from "./api.ts";
 
 export async function reindexCommand() {
@@ -59,7 +59,7 @@ export async function processIndexQueue(messages: MQMessage[]) {
       name = name.slice(0, -3);
       await indexPage(name);
     } else {
-      await indexAttachment(name);
+      await indexDocument(name);
     }
   }
 }

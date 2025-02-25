@@ -1,10 +1,6 @@
 import type { Client } from "../client.ts";
 import type { SysCallMapping } from "../../lib/plugos/system.ts";
-import type {
-  AttachmentMeta,
-  FileMeta,
-  PageMeta,
-} from "../../plug-api/types.ts";
+import type { DocumentMeta, FileMeta, PageMeta } from "../../plug-api/types.ts";
 
 export function spaceReadSyscalls(editor: Client): SysCallMapping {
   return {
@@ -20,17 +16,17 @@ export function spaceReadSyscalls(editor: Client): SysCallMapping {
     "space.listPlugs": (): Promise<FileMeta[]> => {
       return editor.space.listPlugs();
     },
-    "space.listAttachments": async (): Promise<AttachmentMeta[]> => {
-      return await editor.space.fetchAttachmentList();
+    "space.listDocuments": async (): Promise<DocumentMeta[]> => {
+      return await editor.space.fetchDocumentList();
     },
-    "space.readAttachment": async (_ctx, name: string): Promise<Uint8Array> => {
-      return (await editor.space.readAttachment(name)).data;
+    "space.readDocument": async (_ctx, name: string): Promise<Uint8Array> => {
+      return (await editor.space.readDocument(name)).data;
     },
-    "space.getAttachmentMeta": async (
+    "space.getDocumentMeta": async (
       _ctx,
       name: string,
-    ): Promise<AttachmentMeta> => {
-      return await editor.space.getAttachmentMeta(name);
+    ): Promise<DocumentMeta> => {
+      return await editor.space.getDocumentMeta(name);
     },
     // FS
     "space.listFiles": (): Promise<FileMeta[]> => {
@@ -60,22 +56,22 @@ export function spaceWriteSyscalls(editor: Client): SysCallMapping {
     "space.deletePage": async (_ctx, name: string) => {
       // If we're deleting the current page, navigate to the index page
       if (editor.currentPage === name) {
-        await editor.navigate({ page: "" });
+        await editor.navigate({ kind: "page", page: "" });
       }
       // Remove page from open pages in editor
       // editor.openPages.openPages.delete(name);
       console.log("Deleting page");
       await editor.space.deletePage(name);
     },
-    "space.writeAttachment": (
+    "space.writeDocument": (
       _ctx,
       name: string,
       data: Uint8Array,
-    ): Promise<AttachmentMeta> => {
-      return editor.space.writeAttachment(name, data);
+    ): Promise<DocumentMeta> => {
+      return editor.space.writeDocument(name, data);
     },
-    "space.deleteAttachment": async (_ctx, name: string) => {
-      await editor.space.deleteAttachment(name);
+    "space.deleteDocument": async (_ctx, name: string) => {
+      await editor.space.deleteDocument(name);
     },
     "space.writeFile": (
       _ctx,

@@ -51,7 +51,7 @@ export async function queryProvider({
 export async function searchCommand() {
   const phrase = await editor.prompt("Search for: ");
   if (phrase) {
-    await editor.navigate({ page: `${searchPrefix}${phrase}` });
+    await editor.navigate({ kind: "page", page: `${searchPrefix}${phrase}` });
   }
 }
 

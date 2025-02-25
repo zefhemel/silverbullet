@@ -9,6 +9,7 @@ import {
 import type { DecorationSet } from "@codemirror/view";
 import { Decoration, EditorView, WidgetType } from "@codemirror/view";
 import type { Client } from "../client.ts";
+import type { PageMeta } from "@silverbulletmd/silverbullet/types";
 
 type LinkOptions = {
   text: string;
@@ -177,7 +178,7 @@ export function isCursorInRange(state: EditorState, range: [number, number]) {
 export const invisibleDecoration = Decoration.replace({});
 
 export function shouldRenderWidgets(client: Client) {
-  const currentPageMeta = client.ui.viewState.currentPageMeta;
+  const currentPageMeta = client.ui.viewState.current?.meta as PageMeta;
   return !currentPageMeta?.tags?.includes("template") &&
     currentPageMeta?.pageDecoration?.renderWidgets !== false &&
     !currentPageMeta?.name.startsWith("!");

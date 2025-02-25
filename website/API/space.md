@@ -1,4 +1,4 @@
-The Space API provides functions for interacting with pages, attachments, and files in the space.
+The Space API provides functions for interacting with pages, documents, and files in the space.
 
 # Page Operations
 
@@ -48,44 +48,44 @@ Example:
 space.deletePage("old-notes")
 ```
 
-# Attachment Operations
+# Document Operations
 
-## space.listAttachments()
-Returns a list of all attachments in the space.
+## space.listDocuments()
+Returns a list of all documents in the space.
 
 Example:
 ```lua
-local attachments = space.listAttachments()
-for att in each(attachments) do
-    print(att.name, att.size)
+local documents = space.listDocuments()
+for doc in each(documents) do
+    print(doc.name, doc.size)
 end
 ```
 
-## space.readAttachment(name)
-Reads the content of an attachment.
+## space.readDocument(name)
+Reads the content of a document.
 
 Example:
 ```lua
-local data = space.readAttachment("image.png")
-print("Attachment size: " .. #data .. " bytes")
+local data = space.readDocument("image.png")
+print("Document size: " .. #data .. " bytes")
 ```
 
-## space.writeAttachment(name, data)
-Writes binary data to an attachment.
+## space.writeDocument(name, data)
+Writes binary data to a document.
 
 Example:
 ```lua
 local binaryData = string.char(72, 69, 76, 76, 79)  -- "HELLO" in binary
-local meta = space.writeAttachment("test.bin", binaryData)
-print("Attachment saved with size: " .. meta.size)
+local meta = space.writeDocument("test.bin", binaryData)
+print("Document saved with size: " .. meta.size)
 ```
 
-## space.deleteAttachment(name)
-Deletes an attachment from the space.
+## space.deleteDocument(name)
+Deletes a document from the space.
 
 Example:
 ```lua
-space.deleteAttachment("old-image.png")
+space.deleteDocument("old-image.png")
 ```
 
 # File Operations

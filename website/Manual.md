@@ -30,7 +30,7 @@ These are the core concepts used in SilverBullet:
   * [[Frontmatter]]
   * [[Page Name Rules]]
 * [[Folders]]
-* [[Attachments]]
+* [[Documents]]
 * [[Templates]]
 
 # Editing and Formatting

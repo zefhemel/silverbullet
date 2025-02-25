@@ -4,7 +4,7 @@ import type {
   CompletionContext,
   CompletionResult,
 } from "@codemirror/autocomplete";
-import type { PageMeta } from "@silverbulletmd/silverbullet/types";
+import type { DocumentMeta, PageMeta } from "@silverbulletmd/silverbullet/types";
 import { tagRegex as mdTagRegex } from "$common/markdown_parser/constants.ts";
 import { extractHashtag } from "@silverbulletmd/silverbullet/lib/tags";
 
@@ -12,116 +12,163 @@ const tagRegex = new RegExp(mdTagRegex.source, "g");
 
 export function PageNavigator({
   allPages,
+  allDocuments,
+  extensions,
   onNavigate,
   onModeSwitch,
   completer,
   vimMode,
   mode,
   darkMode,
-  currentPage,
+  currentPath,
 }: {
+  allDocuments: DocumentMeta[];
   allPages: PageMeta[];
+  extensions: Set<string>;
   vimMode: boolean;
   darkMode: boolean;
-  mode: "page" | "meta" | "all";
-  onNavigate: (page: string | undefined) => void;
-  onModeSwitch: (mode: "page" | "meta" | "all") => void;
+  mode: "page" | "meta" | "document" | "all";
+  onNavigate: (page: string | undefined, type: "document" | "page") => void;
+  onModeSwitch: (mode: "page" | "meta" | "document" | "all") => void;
   completer: (context: CompletionContext) => Promise<CompletionResult | null>;
-  currentPage?: string;
+  currentPath?: string;
 }) {
   const options: FilterOption[] = [];
-  for (const pageMeta of allPages) {
-    // Sanitize the page name
-    if (!pageMeta.name) {
-      pageMeta.name = pageMeta.ref;
-    }
-    // Order by last modified date in descending order
-    let orderId = -new Date(pageMeta.lastModified).getTime();
-    // Unless it was opened in this session
-    if (pageMeta.lastOpened) {
-      orderId = -pageMeta.lastOpened;
-    }
-    // Or it's the currently open page
-    if (currentPage && currentPage === pageMeta.name || pageMeta._isAspiring) {
-      // ... then we put it all the way to the end
-      orderId = Infinity;
-    }
-    const cssClass = (pageMeta.pageDecoration?.cssClasses || []).join(" ")
-      .replaceAll(/[^a-zA-Z0-9-_ ]/g, "");
 
-    if (mode === "page") {
-      // Special behavior for regular pages
+  if (mode === "document" || mode === "all") {
+    for (const documentMeta of allDocuments) {
+      const isViewable = extensions.has(documentMeta.extension);
+
+      let orderId = isViewable ? -new Date(documentMeta.lastModified).getTime() : (Number.MAX_VALUE - new Date(documentMeta.lastModified).getTime());
+
+      if (currentPath && currentPath === documentMeta.name) {
+        orderId = 0;
+      }
+
+      // Can't really add tags to document as of right now, but maybe in the future
       let description: string | undefined;
-      let aliases: string[] = [];
-      if (pageMeta.displayName) {
-        aliases.push(pageMeta.displayName);
-      }
-      if (Array.isArray(pageMeta.aliases)) {
-        aliases = aliases.concat(pageMeta.aliases);
-      }
-      if (aliases.length > 0) {
-        description = "(a.k.a. " + aliases.join(", ") + ") ";
-      }
-      if (pageMeta.tags) {
+      if (documentMeta.tags) {
         description = (description || "") +
-          pageMeta.tags.map((tag) => `#${tag}`).join(" ");
+        documentMeta.tags.map((tag) => `#${tag}`).join(" ");
       }
+
+      if (!isViewable && client.clientSystem.readOnlyMode) continue;
+
       options.push({
-        ...pageMeta,
-        name: (pageMeta.pageDecoration?.prefix ?? "") + pageMeta.name,
+        type: "document",
+        ...documentMeta,
+        name: documentMeta.name,
         description,
         orderId: orderId,
-        hint: pageMeta._isAspiring ? "Create page" : undefined,
-        cssClass,
-      });
-    } else if (mode === "meta") {
-      // Special behavior for #template and #meta pages
-      if (pageMeta._isAspiring) {
-        // Skip over broken links
-        continue;
-      }
-      options.push({
-        ...pageMeta,
-        // Use the displayName or last bit of the path as the name
-        name: pageMeta.displayName || pageMeta.name.split("/").pop()!,
-        // And use the full path as the description
-        description: pageMeta.name,
-        hint: pageMeta.tags![0],
-        orderId: orderId,
-        cssClass,
-      });
-    } else { // all
-      // In mode "all" just show the full path and all tags
-      let description: string | undefined;
-      if (pageMeta.tags) {
-        description = (description || "") +
-          pageMeta.tags.map((tag) => `#${tag}`).join(" ");
-      }
-      options.push({
-        ...pageMeta,
-        name: pageMeta.name,
-        description,
-        orderId: orderId,
-        cssClass,
+        hint: documentMeta.name.split(".").pop()?.toUpperCase(),
+        hintInactive: !isViewable,
       });
     }
   }
-  let completePrefix = currentPage + "/";
-  if (currentPage && currentPage.includes("/")) {
-    const pieces = currentPage.split("/");
+
+  if (mode !== "document") {
+    for (const pageMeta of allPages) {
+      // Sanitize the page name
+      if (!pageMeta.name) {
+        pageMeta.name = pageMeta.ref;
+      }
+      // Order by last modified date in descending order
+      let orderId = -new Date(pageMeta.lastModified).getTime();
+      // Unless it was opened in this session
+      if (pageMeta.lastOpened) {
+        orderId = -pageMeta.lastOpened;
+      }
+      // Or it's the currently open page
+      if (currentPath && currentPath === pageMeta.name || pageMeta._isAspiring) {
+        // ... then we put it all the way to the end
+        orderId = Infinity;
+      }
+      const cssClass = (pageMeta.pageDecoration?.cssClasses || []).join(" ")
+        .replaceAll(/[^a-zA-Z0-9-_ ]/g, "");
+
+      if (mode === "page") {
+        // Special behavior for regular pages
+        let description: string | undefined;
+        let aliases: string[] = [];
+        if (pageMeta.displayName) {
+          aliases.push(pageMeta.displayName);
+        }
+        if (Array.isArray(pageMeta.aliases)) {
+          aliases = aliases.concat(pageMeta.aliases);
+        }
+        if (aliases.length > 0) {
+          description = "(a.k.a. " + aliases.join(", ") + ") ";
+        }
+        if (pageMeta.tags) {
+          description = (description || "") +
+            pageMeta.tags.map((tag) => `#${tag}`).join(" ");
+        }
+        options.push({
+          type: "page",
+          ...pageMeta,
+          name: (pageMeta.pageDecoration?.prefix ?? "") + pageMeta.name,
+          description,
+          orderId: orderId,
+          hint: pageMeta._isAspiring ? "Create page" : undefined,
+          cssClass,
+        });
+      } else if (mode === "meta") {
+        // Special behavior for #template and #meta pages
+        if (pageMeta._isAspiring) {
+          // Skip over broken links
+          continue;
+        }
+        options.push({
+          type: "page",
+          ...pageMeta,
+          // Use the displayName or last bit of the path as the name
+          name: pageMeta.displayName || pageMeta.name.split("/").pop()!,
+          // And use the full path as the description
+          description: pageMeta.name,
+          hint: pageMeta.tags![0],
+          orderId: orderId,
+          cssClass,
+        });
+      } else { // all
+        // In mode "all" just show the full path and all tags
+        let description: string | undefined;
+        if (pageMeta.tags) {
+          description = (description || "") +
+            pageMeta.tags.map((tag) => `#${tag}`).join(" ");
+        }
+        options.push({
+          type: "page",
+          ...pageMeta,
+          name: pageMeta.name,
+          description,
+          orderId: orderId,
+          cssClass,
+        });
+      }
+    }
+  }
+
+  let completePrefix = currentPath + "/";
+  if (currentPath && currentPath.includes("/")) {
+    const pieces = currentPath.split("/");
     completePrefix = pieces.slice(0, pieces.length - 1).join("/") + "/";
-  } else if (currentPage && currentPage.includes(" ")) {
-    completePrefix = currentPage.split(" ")[0] + " ";
+  } else if (currentPath && currentPath.includes(" ")) {
+    completePrefix = currentPath.split(" ")[0] + " ";
   }
 
-  const pageNoun = mode === "meta" ? mode : "page";
+  const allowNew = mode !== "document";
+  const creatablePageNoun = mode !== "all" ? mode : "page";
+  const openablePageNoun = mode !== "all" ? mode : "page or document";
+
   return (
     <FilterList
       placeholder={mode === "page"
         ? "Page"
         : (mode === "meta"
           ? "#template or #meta page"
-          : "Any page, also hidden")}
+          : (mode === "document"
+            ? "Document"
+            : "Any page or Document, also hidden"))}
       label="Open"
       options={options}
       vimMode={vimMode}
@@ -139,6 +186,9 @@ export function PageNavigator({
               onModeSwitch("meta");
               break;
             case "meta":
+              onModeSwitch("document");
+              break;
+            case "document":
               onModeSwitch("all");
               break;
             case "all":
@@ -183,12 +233,12 @@ export function PageNavigator({
         }
         return options;
       }}
-      allowNew={true}
-      helpText={`Press <code>Enter</code> to open the selected ${pageNoun}, or <code>Shift-Enter</code> to create a new ${pageNoun} with this exact name.`}
-      newHint={`Create ${pageNoun}`}
+      allowNew={allowNew}
+      helpText={`Press <code>Enter</code> to open the selected ${openablePageNoun}` + (allowNew ? `, or <code>Shift-Enter</code> to create a new ${creatablePageNoun} with this exact name.` : "")}
+      newHint={`Create ${creatablePageNoun}`}
       completePrefix={completePrefix}
       onSelect={(opt) => {
-        onNavigate(opt?.ref || opt?.name);
+        onNavigate(opt?.ref || opt?.name, opt?.type);
       }}
     />
   );

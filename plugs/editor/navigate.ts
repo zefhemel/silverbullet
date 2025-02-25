@@ -17,7 +17,7 @@ import {
   resolvePath,
 } from "@silverbulletmd/silverbullet/lib/resolve";
 import {
-  looksLikePathWithExtension,
+  parseLocationRef,
   parsePageRef,
 } from "@silverbulletmd/silverbullet/lib/page_ref";
 import { tagPrefix } from "../index/constants.ts";
@@ -54,29 +54,25 @@ async function actionClickOrActionEnter(
   switch (mdTree.type) {
     case "WikiLink": {
       const link = mdTree.children![1]!.children![0].text!;
-      // Assume is attachment if it has extension
-      if (looksLikePathWithExtension(link)) {
-        const attachmentPath = resolvePath(
-          currentPage,
-          "/" + decodeURI(link),
-        );
-        return editor.openUrl(attachmentPath);
-      } else {
-        const pageRef = parsePageRef(link);
-        pageRef.page = resolvePath(currentPage, "/" + pageRef.page);
-        if (!pageRef.page) {
-          pageRef.page = currentPage;
-        }
-        // This is an explicit navigate, move to the top
-        if (pageRef.pos === undefined) {
-          pageRef.pos = 0;
-        }
-        return editor.navigate(pageRef, false, inNewWindow);
+      const currentPath = await editor.getCurrentPath();
+      const locationRef = parseLocationRef(link);
+      locationRef.page = resolvePath(currentPage, "/" + locationRef.page);
+      if (!locationRef.page) {
+        locationRef.page = currentPath;
       }
+      // This is an explicit navigate, move to the top
+      if (locationRef.kind === "page" && locationRef.pos === undefined) {
+        locationRef.pos = 0;
+      }
+      return editor.navigate(locationRef, false, inNewWindow);
     }
     case "PageRef": {
       const pageName = parsePageRef(mdTree.children![0].text!).page;
-      return editor.navigate({ page: pageName, pos: 0 }, false, inNewWindow);
+      return editor.navigate(
+        { kind: "page", page: pageName, pos: 0 },
+        false,
+        inNewWindow,
+      );
     }
     case "NakedURL":
     case "URL":
@@ -126,7 +122,7 @@ async function actionClickOrActionEnter(
     case "Hashtag": {
       const hashtag = extractHashtag(mdTree.children![0].text!);
       await editor.navigate(
-        { page: `${tagPrefix}${hashtag}`, pos: 0 },
+        { kind: "page", page: `${tagPrefix}${hashtag}`, pos: 0 },
         false,
         inNewWindow,
       );
@@ -154,11 +150,11 @@ export async function clickNavigate(event: ClickEvent) {
 }
 
 export async function navigateCommand(cmdDef: any) {
-  await editor.navigate({ page: cmdDef.page, pos: 0 });
+  await editor.navigate({ kind: "page", page: cmdDef.page, pos: 0 });
 }
 
 export async function navigateToPage(_cmdDef: any, pageName: string) {
-  await editor.navigate({ page: pageName, pos: 0 });
+  await editor.navigate({ kind: "page", page: pageName, pos: 0 });
 }
 
 export async function navigateToURL(_cmdDef: any, url: string) {

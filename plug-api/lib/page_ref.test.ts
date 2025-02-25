@@ -2,6 +2,7 @@ import {
   decodePageURI,
   encodePageRef,
   encodePageURI,
+  parseLocationRef,
   parsePageRef,
   validatePageName,
 } from "./page_ref.ts";
@@ -9,52 +10,82 @@ import { assertEquals, AssertionError, assertThrows } from "@std/assert";
 
 Deno.test("Page utility functions", () => {
   // Base cases
-  assertEquals(parsePageRef("foo"), { page: "foo" });
-  assertEquals(parsePageRef("[[foo]]"), { page: "foo" });
-  assertEquals(parsePageRef("foo@1"), { page: "foo", pos: 1 });
-  assertEquals(parsePageRef("foo@L1"), {
+  assertEquals(parseLocationRef("foo"), { kind: "page", page: "foo" });
+  assertEquals(parseLocationRef("[[foo]]"), { kind: "page", page: "foo" });
+  assertEquals(parseLocationRef("foo@1"), {
+    kind: "page",
+    page: "foo",
+    pos: 1,
+  });
+  assertEquals(parseLocationRef("foo@L1"), {
+    kind: "page",
     page: "foo",
     pos: { line: 1, column: 1 },
   });
-  assertEquals(parsePageRef("foo@L2C3"), {
+  assertEquals(parseLocationRef("foo@L2C3"), {
+    kind: "page",
     page: "foo",
     pos: { line: 2, column: 3 },
   });
-  assertEquals(parsePageRef("foo@l2c3"), {
+  assertEquals(parseLocationRef("foo@l2c3"), {
+    kind: "page",
     page: "foo",
     pos: { line: 2, column: 3 },
   });
-  assertEquals(parsePageRef("foo$bar"), { page: "foo", anchor: "bar" });
-  assertEquals(parsePageRef("foo#My header"), {
+  assertEquals(parseLocationRef("foo$bar"), {
+    kind: "page",
+    page: "foo",
+    anchor: "bar",
+  });
+  assertEquals(parseLocationRef("foo#My header"), {
+    kind: "page",
     page: "foo",
     header: "My header",
   });
-  assertEquals(parsePageRef("foo$bar@1"), {
+  assertEquals(parseLocationRef("foo$bar@1"), {
+    kind: "page",
     page: "foo",
     anchor: "bar",
     pos: 1,
   });
+  assertEquals(parseLocationRef("foo.pdf"), {
+    kind: "document",
+    page: "foo.pdf",
+  });
 
   // Meta page
-  assertEquals(parsePageRef("^foo"), { page: "foo", meta: true });
+  assertEquals(parseLocationRef("^foo"), {
+    kind: "page",
+    page: "foo",
+    meta: true,
+  });
 
   // Edge cases
-  assertEquals(parsePageRef(""), { page: "" });
-  assertEquals(parsePageRef("user@domain.com"), { page: "user@domain.com" });
+  assertEquals(parseLocationRef(""), { kind: "page", page: "" });
+  assertEquals(parsePageRef("user@domain.com"), {
+    kind: "page",
+    page: "user@domain.com",
+  });
 
   // Encoding
-  assertEquals(encodePageRef({ page: "foo" }), "foo");
-  assertEquals(encodePageRef({ page: "foo", pos: 10 }), "foo@10");
+  assertEquals(encodePageRef({ kind: "page", page: "foo" }), "foo");
+  assertEquals(encodePageRef({ kind: "page", page: "foo", pos: 10 }), "foo@10");
   assertEquals(
-    encodePageRef({ page: "foo", pos: { line: 10, column: 1 } }),
+    encodePageRef({ kind: "page", page: "foo", pos: { line: 10, column: 1 } }),
     "foo@L10",
   );
   assertEquals(
-    encodePageRef({ page: "foo", pos: { line: 10, column: 5 } }),
+    encodePageRef({ kind: "page", page: "foo", pos: { line: 10, column: 5 } }),
     "foo@L10C5",
   );
-  assertEquals(encodePageRef({ page: "foo", anchor: "bar" }), "foo$bar");
-  assertEquals(encodePageRef({ page: "foo", header: "bar" }), "foo#bar");
+  assertEquals(
+    encodePageRef({ kind: "page", page: "foo", anchor: "bar" }),
+    "foo$bar",
+  );
+  assertEquals(
+    encodePageRef({ kind: "page", page: "foo", header: "bar" }),
+    "foo#bar",
+  );
 
   // Page name validation
 

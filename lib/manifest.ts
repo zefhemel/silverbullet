@@ -66,6 +66,10 @@ export type SyscallHookT = {
   syscall?: string;
 };
 
+export type DocumentEditorT = {
+  editor?: string | string[];
+};
+
 /** Silverbullet hooks give plugs access to silverbullet core systems.
  *
  * Hooks are associated with typescript functions through a manifest file.
@@ -83,6 +87,7 @@ export type SilverBulletHooks =
   & PanelWidgetT
   & EndpointHookT
   & PlugNamespaceHookT
+  & DocumentEditorT
   & SyscallHookT;
 
 /** A plug manifest configures hooks, declares syntax extensions, and describes plug metadata.

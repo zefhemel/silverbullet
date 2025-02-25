@@ -21,7 +21,7 @@ export type MarkdownRenderOptions = {
   failOnUnknown?: true;
   smartHardBreak?: true;
   annotationPositions?: true;
-  attachmentUrlPrefix?: string;
+  documentUrlPrefix?: string;
   preserveAttributes?: true;
   // When defined, use to inline images as data: urls
   translateUrls?: (url: string, type: "link" | "image") => string;
@@ -223,10 +223,10 @@ function render(
       let url = urlNode.children![0].text!;
       if (isLocalPath(url)) {
         if (
-          options.attachmentUrlPrefix &&
-          !url.startsWith(options.attachmentUrlPrefix)
+          options.documentUrlPrefix &&
+          !url.startsWith(options.documentUrlPrefix)
         ) {
-          url = `${options.attachmentUrlPrefix}${url}`;
+          url = `${options.documentUrlPrefix}${url}`;
         }
       }
       return {
@@ -246,10 +246,10 @@ function render(
       let url = urlNode.children![0].text!;
       if (isLocalPath(url)) {
         if (
-          options.attachmentUrlPrefix &&
-          !url.startsWith(options.attachmentUrlPrefix)
+          options.documentUrlPrefix &&
+          !url.startsWith(options.documentUrlPrefix)
         ) {
-          url = `${options.attachmentUrlPrefix}${url}`;
+          url = `${options.documentUrlPrefix}${url}`;
         }
       }
       return {
@@ -293,10 +293,10 @@ function render(
 
       if (
         isLocalPath(url) &&
-        options.attachmentUrlPrefix &&
-        !url.startsWith(options.attachmentUrlPrefix)
+        options.documentUrlPrefix &&
+        !url.startsWith(options.documentUrlPrefix)
       ) {
-        url = `${options.attachmentUrlPrefix}${url}`;
+        url = `${options.documentUrlPrefix}${url}`;
       }
 
       return {

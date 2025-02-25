@@ -41,7 +41,7 @@ import { lineWrapper } from "./cm_plugins/line_wrapper.ts";
 import { createSmartQuoteKeyBindings } from "./cm_plugins/smart_quotes.ts";
 import type { ClickEvent } from "../plug-api/types.ts";
 import {
-  attachmentExtension,
+  documentExtension,
   pasteLinkExtension,
 } from "./cm_plugins/editor_paste.ts";
 import type { TextChange } from "./change.ts";
@@ -54,6 +54,7 @@ import { parseCommand } from "$common/command.ts";
 import { safeRun } from "$lib/async.ts";
 import { codeCopyPlugin } from "./cm_plugins/code_copy.ts";
 import { disableSpellcheck } from "./cm_plugins/spell_checking.ts";
+import { isValidEditor } from "$lib/command.ts";
 
 export function createEditorState(
   client: Client,
@@ -288,7 +289,7 @@ export function createEditorState(
         },
       ),
       pasteLinkExtension,
-      attachmentExtension(client),
+      documentExtension(client),
       closeBrackets(),
     ],
   });
@@ -334,7 +335,10 @@ export function createCommandKeyBindings(client: Client): KeyBinding[] {
 
   // Then add bindings for plug commands
   for (const def of client.clientSystem.commandHook.editorCommands.values()) {
-    if (def.command.key) {
+    const currentEditor = client.documentEditor?.name;
+    const requiredEditor = def.command.requireEditor;
+
+    if (def.command.key && isValidEditor(currentEditor, requiredEditor)) {
       // If we've already overridden this command, skip it
       if (overriddenCommands.has(def.command.name)) {
         continue;
@@ -374,24 +378,30 @@ export function createCommandKeyBindings(client: Client): KeyBinding[] {
 }
 
 export function createKeyBindings(client: Client): Extension {
-  return keymap.of([
-    ...createCommandKeyBindings(client),
-    ...createSmartQuoteKeyBindings(client),
-    ...closeBracketsKeymap,
-    ...client.ui.viewState.uiOptions.vimMode
-      ? [
-        // Workaround for https://github.com/replit/codemirror-vim/issues/182;
-        // without this, Enter does nothing for ordinary paragraphs in insert
-        // mode.
-        {
-          key: "Enter",
-          run: insertNewlineAndIndent,
-          shift: insertNewlineAndIndent,
-        },
-      ]
-      : standardKeymap,
-    ...completionKeymap,
-    { key: "Tab", run: acceptCompletion },
-    indentWithTab,
-  ]);
+  if (client.isDocumentEditor()) {
+    return keymap.of([
+      ...createCommandKeyBindings(client),
+    ]);
+  } else {
+    return keymap.of([
+      ...createCommandKeyBindings(client),
+      ...createSmartQuoteKeyBindings(client),
+      ...closeBracketsKeymap,
+      ...client.ui.viewState.uiOptions.vimMode
+        ? [
+          // Workaround for https://github.com/replit/codemirror-vim/issues/182;
+          // without this, Enter does nothing for ordinary paragraphs in insert
+          // mode.
+          {
+            key: "Enter",
+            run: insertNewlineAndIndent,
+            shift: insertNewlineAndIndent,
+          },
+        ]
+        : standardKeymap,
+      ...completionKeymap,
+      { key: "Tab", run: acceptCompletion },
+      indentWithTab,
+    ]);
+  }
 }

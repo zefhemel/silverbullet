@@ -23,6 +23,7 @@ import { LuaRuntimeError } from "$common/space_lua/runtime.ts";
 import { encodePageRef } from "@silverbulletmd/silverbullet/lib/page_ref";
 import { resolveASTReference } from "$common/space_lua.ts";
 import { LuaWidget } from "./lua_widget.ts";
+import type { PageMeta } from "@silverbulletmd/silverbullet/types";
 
 export function luaDirectivePlugin(client: Client) {
   return decoratorStateField((state: EditorState) => {
@@ -43,7 +44,7 @@ export function luaDirectivePlugin(client: Client) {
         }
 
         const text = state.sliceDoc(node.from + 2, node.to - 1);
-        const currentPageMeta = client.ui.viewState.currentPageMeta;
+        const currentPageMeta = client.ui.viewState.current?.meta as PageMeta;
         widgets.push(
           Decoration.widget({
             widget: new LuaWidget(
@@ -62,7 +63,7 @@ export function luaDirectivePlugin(client: Client) {
                   tl.setLocal(
                     "currentPage",
                     currentPageMeta ||
-                      { name: client.ui.viewState.currentPage },
+                      { name: client.ui.viewState.current?.path },
                   );
                   const sf = LuaStackFrame.createWithGlobalEnv(
                     client.clientSystem.spaceLuaEnv.env,

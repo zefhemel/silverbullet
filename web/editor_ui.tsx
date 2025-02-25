@@ -16,6 +16,7 @@ import { Panel } from "./components/panel.tsx";
 import { safeRun, sleep } from "../lib/async.ts";
 import { parseCommand } from "$common/command.ts";
 import { defaultActionButtons } from "@silverbulletmd/silverbullet/type/config";
+import type { FilterOption } from "@silverbulletmd/silverbullet/type/client";
 
 export class MainUI {
   viewState: AppViewState = initialViewState;
@@ -38,7 +39,6 @@ export class MainUI {
           // In some cm element, let's back out
           return;
         }
-        console.log("Delegated keydown", ev, "to editor");
         client.focus();
         if (runScopeHandlers(client.editorView, ev, "editor")) {
           ev.preventDefault();
@@ -79,12 +79,12 @@ export class MainUI {
     const client = this.client;
 
     useEffect(() => {
-      if (viewState.currentPage) {
+      if (viewState.current) {
         document.title =
-          (viewState.currentPageMeta?.pageDecoration?.prefix ?? "") +
-          viewState.currentPage;
+          (viewState.current.meta?.pageDecoration?.prefix ?? "") +
+          viewState.current.path;
       }
-    }, [viewState.currentPage, viewState.currentPageMeta]);
+    }, [viewState.current]);
 
     useEffect(() => {
       client.tweakEditorDOM(
@@ -112,8 +112,10 @@ export class MainUI {
       <>
         {viewState.showPageNavigator && (
           <PageNavigator
+            allDocuments={viewState.allDocuments}
             allPages={viewState.allPages}
-            currentPage={client.currentPage}
+            extensions={new Set(Array.from(client.clientSystem.documentEditorHook.documentEditors.values()).flatMap(({ extensions }) => extensions))}
+            currentPath={client.currentPath()}
             mode={viewState.pageNavigatorMode}
             completer={client.miniEditorComplete.bind(client)}
             vimMode={viewState.uiOptions.vimMode}
@@ -124,16 +126,39 @@ export class MainUI {
                 dispatch({ type: "start-navigate", mode });
               });
             }}
-            onNavigate={(page) => {
+            onNavigate={(name, type) => {
               dispatch({ type: "stop-navigate" });
               setTimeout(() => {
                 client.focus();
               });
-              if (page) {
-                safeRun(async () => {
-                  await client.navigate({ page });
-                });
-              }
+              if (!name) return;
+
+              safeRun(async () => {
+                const documentMeta = viewState.allDocuments.find((document) => document.name === name);
+
+                if (type === "document" && !Array.from(client.clientSystem.documentEditorHook.documentEditors.values()).some(({extensions}) => extensions.includes(documentMeta!.extension))) {
+                  const options: string[] = ["Delete", "Rename"]
+
+                  const option = await client.filterBox("Modify", options.map(x => ({name: x} as FilterOption)), "There is no editor for this file type. Modify the selected document");
+                  if (!option) return;
+
+                  switch (option.name) {
+                    case "Delete": {
+                      client.space.deleteDocument(name)
+                      return;
+                    }
+                    case "Rename": {
+                      await client.clientSystem.system.invokeFunction(
+                        "index.renameDocumentCommand",
+                        [{ oldDocument: name }],
+                      );
+                      return;
+                    }
+                  }
+                } else {
+                  await client.navigate({ kind: type, page: name });
+                }
+              });
             }}
           />
         )}
@@ -200,7 +225,7 @@ export class MainUI {
           />
         )}
         <TopBar
-          pageName={viewState.currentPage}
+          pageName={viewState.current?.path || ""}
           notifications={viewState.notifications}
           syncFailures={viewState.syncFailures}
           unsavedChanges={viewState.unsavedChanges}
@@ -210,23 +235,35 @@ export class MainUI {
           progressPerc={viewState.progressPerc}
           completer={client.miniEditorComplete.bind(client)}
           onClick={() => {
-            client.editorView.scrollDOM.scrollTop = 0;
+            if (!client.isDocumentEditor()) {
+              client.editorView.scrollDOM.scrollTop = 0;
+            }
           }}
           onRename={async (newName) => {
-            if (!newName) {
-              // Always move cursor to the start of the page
-              client.editorView.dispatch({
-                selection: { anchor: 0 },
-              });
+            if (client.isDocumentEditor()) {
+              if (!newName) return;
+
+              console.log("Now renaming document to...", newName);
+              await client.clientSystem.system.invokeFunction(
+                "index.renameDocumentCommand",
+                [{ document: newName }],
+              );
+            } else {
+              if (!newName) {
+                // Always move cursor to the start of the page
+                client.editorView.dispatch({
+                  selection: { anchor: 0 },
+                });
+                client.focus();
+                return;
+              }
+              console.log("Now renaming page to...", newName);
+              await client.clientSystem.system.invokeFunction(
+                "index.renamePageCommand",
+                [{ page: newName }],
+              );
               client.focus();
-              return;
             }
-            console.log("Now renaming page to...", newName);
-            await client.clientSystem.system.invokeFunction(
-              "index.renamePageCommand",
-              [{ page: newName }],
-            );
-            client.focus();
           }}
           actionButtons={[
             // Sync button
@@ -326,11 +363,11 @@ export class MainUI {
               style={{ flex: viewState.panels.lhs.mode }}
             />
           )}
-          pageNamePrefix={viewState.currentPageMeta?.pageDecoration
+          pageNamePrefix={viewState.current?.meta?.pageDecoration
             ?.prefix ??
             ""}
-          cssClass={viewState.currentPageMeta?.pageDecoration?.cssClasses
-            ? viewState.currentPageMeta?.pageDecoration?.cssClasses
+          cssClass={viewState.current?.meta?.pageDecoration?.cssClasses
+            ? viewState.current?.meta?.pageDecoration?.cssClasses
               .join(" ").replaceAll(/[^a-zA-Z0-9-_ ]/g, "")
             : ""}
         />

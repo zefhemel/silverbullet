@@ -14,7 +14,7 @@ import {
   findParentMatching,
   nodeAtPos,
 } from "@silverbulletmd/silverbullet/lib/tree";
-import { defaultLinkStyle, maximumAttachmentSize } from "../constants.ts";
+import { defaultLinkStyle, maximumDocumentSize } from "../constants.ts";
 import { safeRun } from "$lib/async.ts";
 import { resolvePath } from "@silverbulletmd/silverbullet/lib/resolve";
 import { localDateString } from "$lib/dates.ts";
@@ -80,7 +80,7 @@ export const pasteLinkExtension = ViewPlugin.fromClass(
   },
 );
 
-export function attachmentExtension(editor: Client) {
+export function documentExtension(editor: Client) {
   let shiftDown = false;
   return EditorView.domEventHandlers({
     dragover: (event) => {
@@ -100,7 +100,7 @@ export function attachmentExtension(editor: Client) {
     },
     drop: (event: DragEvent) => {
       // TODO: This doesn't take into account the target cursor position,
-      // it just drops the attachment wherever the cursor was last.
+      // it just drops the document wherever the cursor was last.
       if (event.dataTransfer) {
         const payload = [...event.dataTransfer.files];
         if (!payload.length) {
@@ -172,7 +172,7 @@ export function attachmentExtension(editor: Client) {
 
   async function processFileTransfer(payload: File[]) {
     const data = await payload[0].arrayBuffer();
-    // data.byteLength > maximumAttachmentSize;
+    // data.byteLength > maximumDocumentSize;
     const fileData: UploadFile = {
       name: payload[0].name,
       contentType: payload[0].type,
@@ -205,40 +205,40 @@ export function attachmentExtension(editor: Client) {
   }
 
   async function saveFile(file: UploadFile) {
-    const maxSize = editor.config.maximumAttachmentSize ||
-      maximumAttachmentSize;
+    const maxSize = editor.config.maximumDocumentSize ||
+      maximumDocumentSize;
     if (file.content.length > maxSize * 1024 * 1024) {
       editor.flashNotification(
-        `Attachment is too large, maximum is ${maxSize}MiB`,
+        `Document is too large, maximum is ${maxSize}MiB`,
         "error",
       );
       return;
     }
 
     const finalFileName = await editor.prompt(
-      "File name for pasted attachment",
+      "File name for pasted document",
       file.name,
     );
     if (!finalFileName) {
       return;
     }
-    const attachmentPath = resolvePath(editor.currentPage, finalFileName);
-    await editor.space.writeAttachment(attachmentPath, file.content);
+    const documentPath = resolvePath(editor.currentPage, finalFileName);
+    await editor.space.writeDocument(documentPath, file.content);
     const linkStyle = editor.config.defaultLinkStyle ||
       defaultLinkStyle.toLowerCase();
-    let attachmentMarkdown = "";
+    let documentMarkdown = "";
     if (linkStyle === "wikilink") {
-      attachmentMarkdown = `[[${attachmentPath}]]`;
+      documentMarkdown = `[[${documentPath}]]`;
     } else {
-      attachmentMarkdown = `[${finalFileName}](${encodeURI(finalFileName)})`;
+      documentMarkdown = `[${finalFileName}](${encodeURI(finalFileName)})`;
     }
     if (file.contentType.startsWith("image/")) {
-      attachmentMarkdown = "!" + attachmentMarkdown;
+      documentMarkdown = "!" + documentMarkdown;
     }
     editor.editorView.dispatch({
       changes: [
         {
-          insert: attachmentMarkdown,
+          insert: documentMarkdown,
           from: editor.editorView.state.selection.main.from,
         },
       ],

@@ -1,8 +1,8 @@
 import { syscall } from "../syscall.ts";
-import type { AttachmentMeta, FileMeta, PageMeta } from "../types.ts";
+import type { DocumentMeta, FileMeta, PageMeta } from "../types.ts";
 
 /**
- * Exposes the space with its pages, attachments and plugs.
+ * Exposes the space with its pages, documents and plugs.
  * @module
  */
 
@@ -62,58 +62,58 @@ export function listPlugs(): Promise<FileMeta[]> {
 }
 
 /**
- * Lists all attachments in the space (all files not ending in .md).
- * @returns a list of all attachments in the space represented as AttachmentMeta objects
+ * Lists all documents in the space (all files not ending in .md).
+ * @returns a list of all documents in the space represented as DocumentMeta objects
  */
-export function listAttachments(): Promise<AttachmentMeta[]> {
-  return syscall("space.listAttachments");
+export function listDocuments(): Promise<DocumentMeta[]> {
+  return syscall("space.listDocuments");
 }
 
 /**
- * Get metadata for an attachment in the space.
- * @param name the path of the attachment to get metadata for
- * @returns the metadata for the attachment
+ * Get metadata for an document in the space.
+ * @param name the path of the document to get metadata for
+ * @returns the metadata for the document
  */
-export function getAttachmentMeta(name: string): Promise<AttachmentMeta> {
-  return syscall("space.getAttachmentMeta", name);
+export function getDocumentMeta(name: string): Promise<DocumentMeta> {
+  return syscall("space.getDocumentMeta", name);
 }
 
 /**
- * Read an attachment from the space
- * @param name path of the attachment to read
- * @returns the attachment data encoded as a data URL
+ * Read an document from the space
+ * @param name path of the document to read
+ * @returns the document data as a UInt8Array
  */
-export function readAttachment(
+export function readDocument(
   name: string,
 ): Promise<Uint8Array> {
-  return syscall("space.readAttachment", name);
+  return syscall("space.readDocument", name);
 }
 
 /**
- * Writes an attachment to the space
- * @param name path of the attachment to write
+ * Writes a document to the space
+ * @param name path of the document to write
  * @param data data itself
  * @returns
  */
-export function writeAttachment(
+export function writeDocument(
   name: string,
   data: Uint8Array,
-): Promise<AttachmentMeta> {
-  return syscall("space.writeAttachment", name, data);
+): Promise<DocumentMeta> {
+  return syscall("space.writeDocument", name, data);
 }
 
 /**
- * Deletes an attachment from the space
- * @param name path of the attachment to delete
+ * Deletes a document from the space
+ * @param name path of the document to delete
  */
-export function deleteAttachment(name: string): Promise<void> {
-  return syscall("space.deleteAttachment", name);
+export function deleteDocument(name: string): Promise<void> {
+  return syscall("space.deleteDocument", name);
 }
 
 // Lower level-file operations
 
 /**
- * List all files in the space (pages, attachments and plugs).
+ * List all files in the space (pages, documents and plugs).
  * @returns a list of all files in the space represented as FileMeta objects
  */
 export function listFiles(): Promise<FileMeta[]> {

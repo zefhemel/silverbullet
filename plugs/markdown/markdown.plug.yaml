@@ -18,6 +18,7 @@ functions:
       name: "Markdown Preview: Toggle"
       key: Ctrl-p
       mac: Cmd-p
+      requireEditor: page
 
   preview:
     path: "./preview.ts:updateMarkdownPreview"
