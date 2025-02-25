@@ -21,11 +21,9 @@ export class Space {
     readonly spacePrimitives: SpacePrimitives,
     eventHook: EventHook,
   ) {
-    eventHook.addLocalListener("page:deleted", (pageName: string) => {
-      const fileName = `${pageName}.md`;
-
+    eventHook.addLocalListener("file:deleted", (fileName: string) => {
       if (this.watchedFiles.has(fileName)) {
-        // Stop watching deleted pages already
+        // Stop watching deleted files already
         this.watchedFiles.delete(fileName);
       }
     });
@@ -37,7 +35,7 @@ export class Space {
 
   public async updatePageList() {
     // The only reason to do this is to trigger events
-    await this.fetchPageList();
+    await this.spacePrimitives.fetchFileList();
   }
 
   async deletePage(name: string): Promise<void> {
@@ -179,14 +177,6 @@ export class Space {
     if (this.watchInterval) {
       clearInterval(this.watchInterval);
     }
-  }
-
-  watchPage(pageName: string) {
-    this.watchedFiles.add(`${pageName}.md`);
-  }
-
-  unwatchPage(pageName: string) {
-    this.watchedFiles.delete(`${pageName}.md`);
   }
 
   watchFile(fileName: string) {

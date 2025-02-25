@@ -1375,7 +1375,7 @@ export class Client implements ConfigContainer {
       if (editorView.contentDOM) {
         this.tweakEditorDOM(editorView.contentDOM);
       }
-      this.space.watchPage(pageName);
+      this.space.watchFile(`${pageName}.md`);
     } else {
       // Just apply minimal patches so that the cursor is preserved
       this.setEditorText(doc.text, true);
