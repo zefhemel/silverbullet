@@ -71,7 +71,6 @@ functions:
       name: "Page: From Template"
       key: "Alt-Shift-t"
       requireMode: rw
-      requireEditor: page
 
   # Lint
   lintTemplateFrontmatter:

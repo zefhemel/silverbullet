@@ -58,7 +58,6 @@ functions:
     command:
       name: "Space: Reindex"
       requireMode: rw
-      requireEditor: page
 
   processIndexQueue:
     path: ./command.ts:processIndexQueue
