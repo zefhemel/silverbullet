@@ -14,5 +14,15 @@
   "display_override": ["window-controls-overlay"],
   "scope": "/",
   "theme_color": "#e1e1e1",
-  "description": "Markdown as a platform"
+  "description": "Markdown as a platform",
+  "share_target": {
+    "action": "/_/share_target",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  }
 }

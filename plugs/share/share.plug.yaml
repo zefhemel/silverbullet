@@ -12,6 +12,12 @@ functions:
     events:
       - share:options
 
+  handleShareTarget:
+    path: share.ts:handleShareTarget
+    env: client
+    events:
+      - http:request:/share_target
+
   clipboardMarkdownShare:
     path: share.ts:clipboardMarkdownShare
     events:
@@ -31,3 +37,10 @@ functions:
     path: publish.ts:publishShare
     events:
       - share:publish
+
+config:
+  # Built-in configuration schemas
+  schema.config.properties:
+    shareTargetPage:
+      type: string
+      format: page-ref

@@ -82,4 +82,8 @@ emoji:
   aliases:
     smile: 😀
     sweat_smile: 😅
+
+# Share Configuration
+# Page where shared content will be stored (defaults to "Shared Items")
+shareTargetPage: "Inbox"
 ```
