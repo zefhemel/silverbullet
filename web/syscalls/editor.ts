@@ -90,14 +90,7 @@ export function editorSyscalls(client: Client): SysCallMapping {
       );
     },
     "editor.openUrl": (_ctx, url: string, existingWindow = false) => {
-      if (!existingWindow) {
-        const win = globalThis.open(url, "_blank");
-        if (win) {
-          win.focus();
-        }
-      } else {
-        location.href = url;
-      }
+      client.openUrl(url, existingWindow);
     },
     "editor.newWindow": () => {
       globalThis.open(

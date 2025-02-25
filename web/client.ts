@@ -1199,7 +1199,7 @@ export class Client implements ConfigContainer {
         console.log(e.message);
 
         if (e.message.includes("Couldn't find")) {
-          editor.openUrl(path + "?raw=true", initalLoad);
+          this.openUrl(path + "?raw=true", initalLoad);
 
           // This is a hacky way to clean up the history here
           globalThis.history.replaceState(
@@ -1481,6 +1481,17 @@ export class Client implements ConfigContainer {
       changes: allChanges,
       annotations: shouldIsolateHistory ? isolateHistory.of("full") : undefined,
     });
+  }
+
+  openUrl(url: string, existingWindow = false) {
+    if (!existingWindow) {
+      const win = globalThis.open(url, "_blank");
+      if (win) {
+        win.focus();
+      }
+    } else {
+      location.href = url;
+    }
   }
 
   async loadCustomStyles() {
