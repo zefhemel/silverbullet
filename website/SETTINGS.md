@@ -82,4 +82,9 @@ emoji:
   aliases:
     smile: 😀
     sweat_smile: 😅
+
+# Defines the indentation multiplier.
+# SilverBullet's base indentation is 2 spaces. Actual indentation = 2 * indentMultiplier.
+# So, using an indentMultiplier of 2 would make your indentation size 4, 3 would make it 6, etc.
+indentMultiplier: 1
 ```
