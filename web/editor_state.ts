@@ -74,6 +74,9 @@ export function createEditorState(
     indentUnit.of("  "),
   );
 
+  client.undoHistoryCompartment = new Compartment();
+  const undoHistory = client.undoHistoryCompartment.of([history()]);
+
   return EditorState.create({
     doc: text,
     extensions: [
@@ -137,7 +140,7 @@ export function createEditorState(
       inlineContentPlugin(client),
       codeCopyPlugin(client),
       highlightSpecialChars(),
-      history(),
+      undoHistory,
       dropCursor(),
       codeFolding({
         placeholderText: "…",

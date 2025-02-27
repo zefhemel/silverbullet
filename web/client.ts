@@ -5,7 +5,7 @@ import type {
 import type { Compartment, EditorState } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
 import { indentUnit, syntaxTree } from "@codemirror/language";
-import { isolateHistory } from "@codemirror/commands";
+import { history, isolateHistory } from "@codemirror/commands";
 import { compile as gitIgnoreCompiler } from "gitignore-parser";
 import type { SyntaxNode } from "@lezer/common";
 import { Space } from "../common/space.ts";
@@ -118,6 +118,7 @@ export class Client implements ConfigContainer {
   editorView!: EditorView;
   keyHandlerCompartment?: Compartment;
   indentUnitCompartment?: Compartment;
+  undoHistoryCompartment?: Compartment;
 
   private pageNavigator!: PathPageNavigator;
 
@@ -248,6 +249,14 @@ export class Client implements ConfigContainer {
     this.loadCustomStyles().catch(console.error);
 
     await this.dispatchAppEvent("editor:init");
+
+    // Reset Undo History after editor initialization.
+    client.editorView.dispatch({
+      effects: client.undoHistoryCompartment?.reconfigure([]),
+    });
+    client.editorView.dispatch({
+      effects: client.undoHistoryCompartment?.reconfigure([history()]),
+    });
 
     // Regularly sync the currently open file
     setInterval(() => {
