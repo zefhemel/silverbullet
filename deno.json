@@ -48,6 +48,7 @@
     "watch-web": "deno run -A --check build_web.ts --watch",
     "watch-server": "deno run -A --unstable-kv  --unstable-worker-options --check --watch silverbullet.ts",
     "watch-plugs": "deno run -A --check build_plugs.ts -w",
+    "watch-all": "deno task watch-web & deno task watch-plugs & deno task watch-server",
 
     "bundle": "deno run -A build_bundle.ts",
 
